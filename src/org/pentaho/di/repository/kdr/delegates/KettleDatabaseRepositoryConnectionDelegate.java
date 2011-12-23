@@ -248,7 +248,7 @@ public class KettleDatabaseRepositoryConnectionDelegate extends KettleDatabaseRe
 				repository.connectionDelegate.closeStepAttributeLookupPreparedStatement();
 				repository.connectionDelegate.closeTransAttributeLookupPreparedStatement();
 				repository.connectionDelegate.closeLookupJobEntryAttribute();
-	            
+
 	            for (String sql : sqlMap.keySet()) {
 	              PreparedStatement ps = sqlMap.get(sql);
 	              try {
@@ -388,11 +388,19 @@ public class KettleDatabaseRepositoryConnectionDelegate extends KettleDatabaseRe
 	{
 	    String sql = "SELECT "+quote(KettleDatabaseRepository.FIELD_STEP_ATTRIBUTE_ID_STEP)+", "+quote(KettleDatabaseRepository.FIELD_STEP_ATTRIBUTE_CODE)+", "+quote(KettleDatabaseRepository.FIELD_STEP_ATTRIBUTE_NR)+", "+quote(KettleDatabaseRepository.FIELD_STEP_ATTRIBUTE_VALUE_NUM)+", "+quote(KettleDatabaseRepository.FIELD_STEP_ATTRIBUTE_VALUE_STR)+" "+
 	                 "FROM "+databaseMeta.getQuotedSchemaTableCombination(null, KettleDatabaseRepository.TABLE_R_STEP_ATTRIBUTE) +" "+
-	                 "WHERE "+quote(KettleDatabaseRepository.FIELD_STEP_ATTRIBUTE_ID_TRANSFORMATION)+" = "+id_transformation+" "+
+	                 "WHERE "+quote(KettleDatabaseRepository.FIELD_STEP_ATTRIBUTE_ID_TRANSFORMATION)+" = ? "+
 	                 "ORDER BY "+quote(KettleDatabaseRepository.FIELD_STEP_ATTRIBUTE_ID_STEP)+", "+quote(KettleDatabaseRepository.FIELD_STEP_ATTRIBUTE_CODE)+", "+quote(KettleDatabaseRepository.FIELD_STEP_ATTRIBUTE_NR)
 	                 ;
 	    
-	    stepAttributesBuffer = database.getRows(sql, -1);
+      PreparedStatement ps = sqlMap.get(sql);
+      if (ps == null) {
+        ps = database.prepareSQL(sql);
+        sqlMap.put(sql, ps);
+      }
+
+	    RowMetaAndData parameter = getParameterMetaData(id_transformation);
+	    ResultSet resultSet = database.openQuery(ps, parameter.getRowMeta(), parameter.getData());
+	    stepAttributesBuffer = database.getRows(resultSet, -1, null);
 	    stepAttributesRowMeta = database.getReturnRowMeta();
         
 	    // must use java-based sort to ensure compatibility with binary search
@@ -400,7 +408,7 @@ public class KettleDatabaseRepositoryConnectionDelegate extends KettleDatabaseRe
 	    //
         Collections.sort(stepAttributesBuffer, new StepAttributeComparator());  // in case db sort does not match our sort
 	}
-
+	
 	/**
      * @return Returns the stepAttributesBuffer.
      */
@@ -1421,12 +1429,13 @@ public class KettleDatabaseRepositoryConnectionDelegate extends KettleDatabaseRe
 	        	quote(KettleDatabaseRepository.FIELD_TRANSFORMATION_DESCRIPTION)+", " +
 	        	quote(idField) + " " +
 	                "FROM "+tableName+" " +
-	                "WHERE "+quote(KettleDatabaseRepository.FIELD_TRANSFORMATION_ID_DIRECTORY)+" = " + id_directory + " "
+	                "WHERE "+quote(KettleDatabaseRepository.FIELD_TRANSFORMATION_ID_DIRECTORY)+" = ? "
 	                ;
-	
+	        RowMetaAndData directoryIdRow = getParameterMetaData(id_directory);
+	        
 	        List<RepositoryElementMetaInterface> repositoryObjects = new ArrayList<RepositoryElementMetaInterface>();
 	        
-	        ResultSet rs = database.openQuery(sql);
+	        ResultSet rs = database.openQuery(sql, directoryIdRow.getRowMeta(), directoryIdRow.getData());
 	        if (rs != null)
 	        {
 	    		List<Object[]> rows = database.getRows(rs, -1, null);
@@ -1486,7 +1495,7 @@ public class KettleDatabaseRepositoryConnectionDelegate extends KettleDatabaseRe
       return ids;
     }
     
-    public String[] getStrings(String sql) throws KettleException
+    public String[] getStrings(String sql, ObjectId...objectId) throws KettleException
     {
       // Get the prepared statement
       //
@@ -1498,8 +1507,14 @@ public class KettleDatabaseRepositoryConnectionDelegate extends KettleDatabaseRe
 
       // Assemble the parameters (if any)
       //
+      // Assemble the parameters (if any)
+      //
       RowMetaInterface parameterMeta = new RowMeta();
-      Object[] parameterData = new Object[0];
+      Object[] parameterData = new Object[objectId.length];
+      for (int i = 0; i < objectId.length; i++) {
+        parameterMeta.addValueMeta(new ValueMeta("id" + (i + 1), ValueMetaInterface.TYPE_INTEGER));
+        parameterData[i] = ((LongObjectId)objectId[i]).longValue();
+      }
 
       // Get the result set back...
       //
@@ -1755,5 +1770,31 @@ public class KettleDatabaseRepositoryConnectionDelegate extends KettleDatabaseRe
         database.closeQuery(resultSet);
       }
     }
+    
+    public RowMetaAndData getParameterMetaData(ObjectId...ids) throws KettleException {
+      RowMetaInterface parameterMeta = new RowMeta();
+      Object[] parameterData = new Object[ids.length];
+      for (int i = 0; i < ids.length; i++) {
+        parameterMeta.addValueMeta(new ValueMeta("id" + (i + 1), ValueMetaInterface.TYPE_INTEGER));
+        parameterData[i] = Long.valueOf(ids[i].getId());
+      }        
+      return new RowMetaAndData(parameterMeta, parameterData);
+    }
+    
 
+    public void performDelete(String sql, ObjectId...ids) throws KettleException {
+      try {
+          PreparedStatement ps = sqlMap.get(sql);
+          if (ps==null) {
+            ps = database.prepareSQL(sql);
+            sqlMap.put(sql, ps);
+          }
+          
+          RowMetaAndData param = getParameterMetaData(ids);
+          database.setValues(param, ps);
+          ps.execute();
+      } catch(SQLException e) {
+        throw new KettleException("Unable to perform delete with SQL: "+sql+", ids="+ids.toString(), e);
+      }
+    }
 }

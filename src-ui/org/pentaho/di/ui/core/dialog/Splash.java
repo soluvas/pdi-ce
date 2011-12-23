@@ -134,7 +134,7 @@ public class Splash {
         } else if (Const.RELEASE.equals(Const.ReleaseType.GA)) {
             versionText = BaseMessages.getString(PKG, "SplashDialog.GA") + " - " + versionText;  //$NON-NLS-1$//$NON-NLS-2$
         } else if (Const.RELEASE.equals(Const.ReleaseType.STABLE)) {
-            versionText = BaseMessages.getString(PKG, "SplashDialog.Stable") + " - " + versionText;  //$NON-NLS-1$//$NON-NLS-2$
+                versionText = BaseMessages.getString(PKG, "SplashDialog.Stable") + " - " + versionText;  //$NON-NLS-1$//$NON-NLS-2$  
         }
         
         e.gc.setFont(verFont);

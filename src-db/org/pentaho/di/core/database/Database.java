@@ -1673,7 +1673,7 @@ public class Database implements VariableSpace, LoggingObjectInterface
         String line = reader.readLine();
         if(line != null) {
           if(line.length() > 0) {
-            if(returnBuffer.length()>0) returnBuffer.append(" "); // add a space between appended lines
+        	if(returnBuffer.length()>0) returnBuffer.append(" "); // add a space between appended lines
             int index = line.indexOf(DOUBLE_HYPHEN);
             if( index >= 0) {
               returnBuffer.append(line.substring(0, index));
