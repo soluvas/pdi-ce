@@ -101,15 +101,14 @@ public class JsonOutput extends BaseStep implements StepInterface
         data.rowsAreSafe=false;
 
 
-        
+        // Create a new object with specified fields
+        JSONObject jo = new JSONObject();
+
         for (int i=0;i<data.nrFields;i++) {
             JsonOutputField outputField = meta.getOutputFields()[i];
             
             ValueMetaInterface v = data.inputRowMeta.getValueMeta(data.fieldIndexes[i]);
             
-            // Create a new object with specified fields
-            JSONObject jo = new JSONObject();
-
 			switch (v.getType()) {
 				case ValueMeta.TYPE_BOOLEAN:
 					jo.put(outputField.getElementName(), data.inputRowMeta.getBoolean(r, data.fieldIndexes[i]));
@@ -127,9 +126,9 @@ public class JsonOutput extends BaseStep implements StepInterface
 					jo.put(outputField.getElementName(), data.inputRowMeta.getString(r, data.fieldIndexes[i]));
 					break;
 			}
-            data.ja.add(jo);
             
         }
+        data.ja.add(jo);
         data.nrRow++;
         
         if(data.nrRowsInBloc>0) {
