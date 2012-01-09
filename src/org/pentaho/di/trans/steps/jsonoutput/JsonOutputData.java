@@ -19,8 +19,10 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.ObjectNode;
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
@@ -31,6 +33,8 @@ import org.pentaho.di.trans.step.StepDataInterface;
  */
 public class JsonOutputData extends BaseStepData implements StepDataInterface
 {
+	public ObjectMapper mapper = new ObjectMapper();
+	
 	public RowMetaInterface inputRowMeta;
 	public RowMetaInterface outputRowMeta;
 	public int inputRowMetaSize;
@@ -38,8 +42,8 @@ public class JsonOutputData extends BaseStepData implements StepDataInterface
 	public int nrFields;
 
 	public int[] fieldIndexes;
-	public JSONObject jg;
-	public JSONArray ja;
+	public ObjectNode jg;
+	public ArrayNode ja;
     public int nrRow;
     public boolean rowsAreSafe;
     public NumberFormat nf;
@@ -69,7 +73,7 @@ public class JsonOutputData extends BaseStepData implements StepDataInterface
     public JsonOutputData()
     {
         super();
-        this.ja = new JSONArray();
+        this.ja = mapper.createArrayNode();
         this.nrRow=0;
         this.outputValue=false;
         this.writeToFile=false;

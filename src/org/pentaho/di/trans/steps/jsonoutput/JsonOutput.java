@@ -15,12 +15,16 @@ package org.pentaho.di.trans.steps.jsonoutput;
 
 
 import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
 import org.apache.commons.vfs.FileObject;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.ResultFile;
 import org.pentaho.di.core.exception.KettleException;
@@ -50,7 +54,6 @@ public class JsonOutput extends BaseStep implements StepInterface
 
     private JsonOutputMeta meta;
     private JsonOutputData data;
-     
      
     public JsonOutput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta, Trans trans)
     {
@@ -102,7 +105,7 @@ public class JsonOutput extends BaseStep implements StepInterface
 
 
         // Create a new object with specified fields
-        JSONObject jo = new JSONObject();
+        ObjectNode jo = data.mapper.createObjectNode();
 
         for (int i=0;i<data.nrFields;i++) {
             JsonOutputField outputField = meta.getOutputFields()[i];
@@ -148,9 +151,14 @@ public class JsonOutput extends BaseStep implements StepInterface
     @SuppressWarnings("unchecked")
 	private void outPutRow(Object[] rowData) throws KettleStepException {
     	// We can now output an object
-		data.jg = new JSONObject();
+		data.jg = data.mapper.createObjectNode();
 		data.jg.put(data.realBlocName, data.ja);
-		String value = data.jg.toJSONString();
+		String value;
+		try {
+			value = data.mapper.writeValueAsString(data.jg);
+		} catch (Exception e) {
+			throw new KettleStepException("Cannot encode JSON", e);
+		}
 		
 		if(data.outputValue) {
 			Object[] outputRowData = RowDataUtil.addValueData(rowData, data.inputRowMetaSize, value);
@@ -174,7 +182,7 @@ public class JsonOutput extends BaseStep implements StepInterface
 		}
         // Data are safe
         data.rowsAreSafe=true;
-        data.ja = new JSONArray();
+        data.ja = data.mapper.createArrayNode();
     }
 
     public boolean init(StepMetaInterface smi, StepDataInterface sdi)
