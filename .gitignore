@@ -1,0 +1,13 @@
+/classes-core/
+/classes-db/
+/classes-dbdialog/
+/classes-ui/
+/classes/
+/lib/
+/src-plugins/kettle-gpload-plugin/bin/
+/src-plugins/kettle-gpload-plugin/dist/
+/src-plugins/kettle-hl7-plugin/bin/
+/src-plugins/kettle-hl7-plugin/dist/
+/src-plugins/kettle-palo-plugin/bin/
+/src-plugins/kettle-palo-plugin/dist/
+/testClasses/
