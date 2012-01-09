@@ -15,15 +15,10 @@ package org.pentaho.di.trans.steps.jsonoutput;
 
 
 import java.io.BufferedOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
 import org.apache.commons.vfs.FileObject;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.ResultFile;
