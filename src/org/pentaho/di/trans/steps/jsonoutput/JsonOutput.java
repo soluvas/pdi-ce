@@ -107,23 +107,27 @@ public class JsonOutput extends BaseStep implements StepInterface
             
             ValueMetaInterface v = data.inputRowMeta.getValueMeta(data.fieldIndexes[i]);
             
-			switch (v.getType()) {
-				case ValueMeta.TYPE_BOOLEAN:
-					jo.put(outputField.getElementName(), data.inputRowMeta.getBoolean(r, data.fieldIndexes[i]));
-					break;
-				case ValueMeta.TYPE_INTEGER:
-					jo.put(outputField.getElementName(), data.inputRowMeta.getInteger(r, data.fieldIndexes[i]));
-					break;
-				case ValueMeta.TYPE_NUMBER:
-					jo.put(outputField.getElementName(), data.inputRowMeta.getNumber(r, data.fieldIndexes[i]));
-					break;
-				case ValueMeta.TYPE_BIGNUMBER:
-					jo.put(outputField.getElementName(), data.inputRowMeta.getBigNumber(r, data.fieldIndexes[i]));
-					break;
-				default:
-					jo.put(outputField.getElementName(), data.inputRowMeta.getString(r, data.fieldIndexes[i]));
-					break;
-			}
+            if (data.inputRowMeta.isNull(r, data.fieldIndexes[i])) {
+            	jo.put(outputField.getElementName(), (String)null);
+            } else {
+				switch (v.getType()) {
+					case ValueMeta.TYPE_BOOLEAN:
+						jo.put(outputField.getElementName(), data.inputRowMeta.getBoolean(r, data.fieldIndexes[i]));
+						break;
+					case ValueMeta.TYPE_INTEGER:
+						jo.put(outputField.getElementName(), data.inputRowMeta.getInteger(r, data.fieldIndexes[i]));
+						break;
+					case ValueMeta.TYPE_NUMBER:
+						jo.put(outputField.getElementName(), data.inputRowMeta.getNumber(r, data.fieldIndexes[i]));
+						break;
+					case ValueMeta.TYPE_BIGNUMBER:
+						jo.put(outputField.getElementName(), data.inputRowMeta.getBigNumber(r, data.fieldIndexes[i]));
+						break;
+					default:
+						jo.put(outputField.getElementName(), data.inputRowMeta.getString(r, data.fieldIndexes[i]));
+						break;
+				}
+            }
             
         }
         data.ja.add(jo);
