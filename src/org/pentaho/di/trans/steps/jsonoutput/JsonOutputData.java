@@ -68,7 +68,7 @@ public class JsonOutputData extends BaseStepData implements StepDataInterface
     public int nrRowsInBloc;
 
     /**
-     * 
+     * Initialize Data for {@link JsonOutput} step.
      */
     public JsonOutputData()
     {
