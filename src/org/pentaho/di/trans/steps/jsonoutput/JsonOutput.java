@@ -19,6 +19,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
 import org.apache.commons.vfs.FileObject;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.ResultFile;
@@ -130,7 +131,7 @@ public class JsonOutput extends BaseStep implements StepInterface
             }
             
         }
-        data.ja.add(jo);
+        data.jsonArray.add(jo);
         data.nrRow++;
         
         if(data.nrRowsInBloc>0) {
@@ -149,12 +150,18 @@ public class JsonOutput extends BaseStep implements StepInterface
     
     @SuppressWarnings("unchecked")
 	private void outPutRow(Object[] rowData) throws KettleStepException {
-    	// We can now output an object
-		data.jg = data.mapper.createObjectNode();
-		data.jg.put(data.realBlocName, data.ja);
+    	// We can now output either an object (if blocName != "") or array if (blocName empty)
+    	JsonNode jsonDoc;
+    	if (!data.realBlocName.isEmpty()) {
+    		ObjectNode jsonObj = data.mapper.createObjectNode();
+    		jsonObj.put(data.realBlocName, data.jsonArray);
+    		jsonDoc = jsonObj;
+    	} else {
+    		jsonDoc = data.jsonArray;
+    	}
 		String value;
 		try {
-			value = data.mapper.writeValueAsString(data.jg);
+			value = data.mapper.writeValueAsString(jsonDoc);
 		} catch (Exception e) {
 			throw new KettleStepException("Cannot encode JSON", e);
 		}
@@ -181,7 +188,7 @@ public class JsonOutput extends BaseStep implements StepInterface
 		}
         // Data are safe
         data.rowsAreSafe=true;
-        data.ja = data.mapper.createArrayNode();
+        data.jsonArray = data.mapper.createArrayNode();
     }
 
     public boolean init(StepMetaInterface smi, StepDataInterface sdi)
@@ -233,8 +240,7 @@ public class JsonOutput extends BaseStep implements StepInterface
     public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
         meta=(JsonOutputMeta)smi;
         data=(JsonOutputData)sdi;
-        if(data.ja!=null) data.ja=null;
-        if(data.jg!=null) data.jg=null;
+        if(data.jsonArray!=null) data.jsonArray=null;
         closeFile();
         super.dispose(smi, sdi);
         
