@@ -154,10 +154,26 @@ public class JsonOutput extends BaseStep implements StepInterface
     	JsonNode jsonDoc;
     	if (!data.realBlocName.isEmpty()) {
     		ObjectNode jsonObj = data.mapper.createObjectNode();
-    		jsonObj.put(data.realBlocName, data.jsonArray);
+    		if (data.nrRowsInBloc == 1) {
+    			// rows in bloc == 1 is special case: do not output array, just output the data as object
+    			if (data.jsonArray.size() > 0)
+    				jsonObj.put(data.realBlocName, data.jsonArray.get(0));
+    			else
+    				jsonObj.put(data.realBlocName, data.mapper.createObjectNode()); // empty object, since JSON doesn't support direct 'null'
+    		} else {
+        		jsonObj.put(data.realBlocName, data.jsonArray);
+    		}
     		jsonDoc = jsonObj;
     	} else {
-    		jsonDoc = data.jsonArray;
+    		if (data.nrRowsInBloc == 1) {
+    			// rows in bloc == 1 is special case: do not output array, just output the data as object
+    			if (data.jsonArray.size() > 0)
+    				jsonDoc = data.jsonArray.get(0);
+    			else
+    				jsonDoc = data.mapper.createObjectNode(); // empty object, since JSON doesn't support direct 'null'
+    		} else {
+    			jsonDoc = data.jsonArray;
+    		}
     	}
 		String value;
 		try {

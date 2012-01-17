@@ -229,17 +229,8 @@ public class JsonOutputTest extends TestCase {
     }
     
     /**
-     * Check the 2 lists comparing the rows in order. If they are not the same
-     * fail the test.
-     * 
-     * @param rows1
-     *            set 1 of rows to compare
-     * @param rows2
-     *            set 2 of rows to compare
-     * @param fileNameColumn
-     *            Number of the column containing the filename. This is only checked
-     *            for being non-null (some systems maybe canonize names differently 
-     *            than we input).                       
+     * Test typical output, several rows, output is a JSON Object Document containing "data" which
+     * contains an array of JSON Object nodes representing stream rows.
      */
     public void testJsonOutputStandard() throws Exception {
         KettleEnvironment.init();
@@ -307,17 +298,7 @@ public class JsonOutputTest extends TestCase {
     }
     
     /**
-     * Check the 2 lists comparing the rows in order. If they are not the same
-     * fail the test.
-     * 
-     * @param rows1
-     *            set 1 of rows to compare
-     * @param rows2
-     *            set 2 of rows to compare
-     * @param fileNameColumn
-     *            Number of the column containing the filename. This is only checked
-     *            for being non-null (some systems maybe canonize names differently 
-     *            than we input).                       
+     * Test output without bloc, directly as JSON Array.
      */
     public void testJsonOutputNoBloc() throws Exception {
         KettleEnvironment.init();
@@ -347,6 +328,151 @@ public class JsonOutputTest extends TestCase {
         StepMeta jsonOutputStep = createJsonOutputStep("json output step", jsonFileName, registry);
         JsonOutputMeta jsonOutputMeta = (JsonOutputMeta) jsonOutputStep.getStepMetaInterface();
         jsonOutputMeta.setJsonBloc("");
+        transMeta.addStep(jsonOutputStep);
+
+        //  create a TransHopMeta for jsonOutputStep and add it to the transMeta
+        TransHopMeta hop_RowGenerator_outputTextFile = new TransHopMeta(rowGeneratorStep, jsonOutputStep);
+        transMeta.addTransHop(hop_RowGenerator_outputTextFile);
+
+        // Create a dummy step  and add it to the tranMeta
+        String dummyStepName = "dummy step";
+        StepMeta dummyStep = createDummyStep(dummyStepName, registry);
+        transMeta.addStep(dummyStep);
+        
+        //  create a TransHopMeta for the 
+        TransHopMeta hop_outputJson_dummyStep = new TransHopMeta(jsonOutputStep, dummyStep);
+        transMeta.addTransHop(hop_outputJson_dummyStep);
+
+        // Now execute the transformation...
+        Trans trans = new Trans(transMeta);
+        trans.prepareExecution(null);
+        
+        //  Create a row collector and add it to the dummy step interface
+        StepInterface dummyStepInterface = trans.getStepInterface(dummyStepName, 0);
+        RowStepCollector dummyRowCollector = new RowStepCollector();
+        dummyStepInterface.addRowListener(dummyRowCollector);
+
+        //RowProducer rowProducer = trans.addRowProducer(injectorStepName, 0);
+        trans.startThreads();
+        trans.waitUntilFinished();
+
+        // Prepare correct expected output
+        String expectedJson = IOUtils.toString(JsonOutputTest.class.getResourceAsStream(transMeta.getName() + ".js"));
+        
+        // Compare the results
+        File outputFile = new File(jsonFileName + ".js");
+        logger.info("Reading JSON file {}", outputFile);
+        String result = FileUtils.readFileToString(outputFile);
+        logger.debug("JSON output => {}", result);
+        Assert.assertEquals(expectedJson, result);
+    }
+    
+    /**
+     * Test single output bloc (output not wrapped in array).
+     */
+    public void testJsonOutputSingle() throws Exception {
+        KettleEnvironment.init();
+        
+        // Create a new transformation...
+        //
+        TransMeta transMeta = new TransMeta();
+        transMeta.setName("testJsonOutputSingle");
+        PluginRegistry registry = PluginRegistry.getInstance();
+        
+        //  create an injector step
+        String injectorStepName = "injector step";
+        StepMeta injectorStep = TestUtilities.createInjectorStep(injectorStepName, registry);
+        transMeta.addStep(injectorStep);        
+        
+        // create a row generator step
+        StepMeta rowGeneratorStep = createRowGeneratorStep("Create rows for "+ transMeta.getName(), registry);
+        transMeta.addStep(rowGeneratorStep);
+        
+        //  create a TransHopMeta for injector and add it to the transMeta
+        TransHopMeta hop_injectory_rowGenerator = new TransHopMeta(injectorStep, rowGeneratorStep);
+        transMeta.addTransHop(hop_injectory_rowGenerator);
+       
+        //  create the json output step
+        //    but first lets get a filename
+        String jsonFileName = TestUtilities.createEmptyTempFile(transMeta.getName() + "_");
+        StepMeta jsonOutputStep = createJsonOutputStep("json output step", jsonFileName, registry);
+        JsonOutputMeta jsonOutputMeta = (JsonOutputMeta) jsonOutputStep.getStepMetaInterface();
+        jsonOutputMeta.setJsonBloc("data");
+        jsonOutputMeta.setNrRowsInBloc("1");
+        jsonOutputMeta.setFileAppended(true);
+        transMeta.addStep(jsonOutputStep);
+
+        //  create a TransHopMeta for jsonOutputStep and add it to the transMeta
+        TransHopMeta hop_RowGenerator_outputTextFile = new TransHopMeta(rowGeneratorStep, jsonOutputStep);
+        transMeta.addTransHop(hop_RowGenerator_outputTextFile);
+
+        // Create a dummy step  and add it to the tranMeta
+        String dummyStepName = "dummy step";
+        StepMeta dummyStep = createDummyStep(dummyStepName, registry);
+        transMeta.addStep(dummyStep);
+        
+        //  create a TransHopMeta for the 
+        TransHopMeta hop_outputJson_dummyStep = new TransHopMeta(jsonOutputStep, dummyStep);
+        transMeta.addTransHop(hop_outputJson_dummyStep);
+
+        // Now execute the transformation...
+        Trans trans = new Trans(transMeta);
+        trans.prepareExecution(null);
+        
+        //  Create a row collector and add it to the dummy step interface
+        StepInterface dummyStepInterface = trans.getStepInterface(dummyStepName, 0);
+        RowStepCollector dummyRowCollector = new RowStepCollector();
+        dummyStepInterface.addRowListener(dummyRowCollector);
+
+        //RowProducer rowProducer = trans.addRowProducer(injectorStepName, 0);
+        trans.startThreads();
+        trans.waitUntilFinished();
+
+        // Prepare correct expected output
+        String expectedJson = IOUtils.toString(JsonOutputTest.class.getResourceAsStream(transMeta.getName() + ".js"));
+        
+        // Compare the results
+        File outputFile = new File(jsonFileName + ".js");
+        logger.info("Reading JSON file {}", outputFile);
+        String result = FileUtils.readFileToString(outputFile);
+        logger.debug("JSON output => {}", result);
+        Assert.assertEquals(expectedJson, result);
+    }
+    
+    /**
+     * Test single output bloc (output not wrapped in array), without bloc name, so output is direct JSON object
+     * representation of the stream row.
+     */
+    public void testJsonOutputSingleNoBloc() throws Exception {
+        KettleEnvironment.init();
+        
+        // Create a new transformation...
+        //
+        TransMeta transMeta = new TransMeta();
+        transMeta.setName("testJsonOutputSingleNoBloc");
+        PluginRegistry registry = PluginRegistry.getInstance();
+        
+        //  create an injector step
+        String injectorStepName = "injector step";
+        StepMeta injectorStep = TestUtilities.createInjectorStep(injectorStepName, registry);
+        transMeta.addStep(injectorStep);        
+        
+        // create a row generator step
+        StepMeta rowGeneratorStep = createRowGeneratorStep("Create rows for "+ transMeta.getName(), registry);
+        transMeta.addStep(rowGeneratorStep);
+        
+        //  create a TransHopMeta for injector and add it to the transMeta
+        TransHopMeta hop_injectory_rowGenerator = new TransHopMeta(injectorStep, rowGeneratorStep);
+        transMeta.addTransHop(hop_injectory_rowGenerator);
+       
+        //  create the json output step
+        //    but first lets get a filename
+        String jsonFileName = TestUtilities.createEmptyTempFile(transMeta.getName() + "_");
+        StepMeta jsonOutputStep = createJsonOutputStep("json output step", jsonFileName, registry);
+        JsonOutputMeta jsonOutputMeta = (JsonOutputMeta) jsonOutputStep.getStepMetaInterface();
+        jsonOutputMeta.setJsonBloc("");
+        jsonOutputMeta.setNrRowsInBloc("1");
+        jsonOutputMeta.setFileAppended(true);
         transMeta.addStep(jsonOutputStep);
 
         //  create a TransHopMeta for jsonOutputStep and add it to the transMeta
