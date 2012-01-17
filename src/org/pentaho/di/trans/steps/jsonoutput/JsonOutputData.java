@@ -42,8 +42,8 @@ public class JsonOutputData extends BaseStepData implements StepDataInterface
 	public int nrFields;
 
 	public int[] fieldIndexes;
-//	public ObjectNode jg;
-	public ArrayNode jsonArray;
+	public ObjectNode jg;
+	public ArrayNode ja;
     public int nrRow;
     public boolean rowsAreSafe;
     public NumberFormat nf;
@@ -74,7 +74,7 @@ public class JsonOutputData extends BaseStepData implements StepDataInterface
     {
         super();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
-        this.jsonArray = mapper.createArrayNode();
+        this.ja = mapper.createArrayNode();
         this.nrRow=0;
         this.outputValue=false;
         this.writeToFile=false;
