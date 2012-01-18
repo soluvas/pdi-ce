@@ -150,6 +150,7 @@ public class JsonOutput extends BaseStep implements StepInterface
     
     @SuppressWarnings("unchecked")
 	private void outPutRow(Object[] rowData) throws KettleStepException {
+		String value = null;
     	// We can now output either an object (if blocName != "") or array if (blocName empty)
     	JsonNode jsonDoc;
     	if (!data.realBlocName.isEmpty()) {
@@ -175,14 +176,15 @@ public class JsonOutput extends BaseStep implements StepInterface
     			jsonDoc = data.jsonArray;
     		}
     	}
-		String value;
 		try {
 			value = data.mapper.writeValueAsString(jsonDoc);
 		} catch (Exception e) {
 			throw new KettleStepException("Cannot encode JSON", e);
 		}
 		
-		if(data.outputValue) {
+		// if rowData is null, it means the position is now AFTER the last input,
+		// so it's impossible to generate any output row now (still possible to write a file though)
+		if (data.outputValue && rowData != null) {
 			Object[] outputRowData = RowDataUtil.addValueData(rowData, data.inputRowMetaSize, value);
 			incrementLinesOutput();
 			putRow(data.outputRowMeta, outputRowData);
