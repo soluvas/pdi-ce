@@ -1,15 +1,25 @@
-/*
- * Copyright (c) 2010 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.
-*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package org.pentaho.di.www;
 
 import java.io.IOException;
@@ -17,10 +27,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.pentaho.pms.util.Const;
 
 public class CarteServlet extends HttpServlet {
 
@@ -112,4 +125,45 @@ public class CarteServlet extends HttpServlet {
     }
   }
 
+  @Override 
+  public void init(ServletConfig config) throws ServletException {
+     
+    try {
+       String startJobClass = config.getInitParameter("startJobServletClass"); 
+       if (!Const.isEmpty(startJobClass)) {
+          Class clazz = Class.forName(startJobClass);
+          startJobServlet = (StartJobServlet)clazz.newInstance();
+       } 
+       
+       String startExecutionTransClass = config.getInitParameter("startExecutionTransServletClass"); 
+       if (!Const.isEmpty(startExecutionTransClass)) {
+          Class clazz = Class.forName(startExecutionTransClass);
+          startExecutionTransServlet = (StartExecutionTransServlet)clazz.newInstance();
+       }
+       
+       String startTransClass = config.getInitParameter("startTransServletClass");
+       if (!Const.isEmpty(startTransClass)) {
+          Class clazz = Class.forName(startTransClass);
+          this.startTransServlet = (StartTransServlet)clazz.newInstance();
+       }
+       
+       String executeTransClass = config.getInitParameter("executeTransServletClass");
+       if (!Const.isEmpty(executeTransClass)) {
+          Class clazz = Class.forName(executeTransClass);
+          this.executeTransServlet = (ExecuteTransServlet)clazz.newInstance();
+       }
+     }
+     catch (ClassNotFoundException cnfe) {
+        throw new ServletException(cnfe);
+     }    
+     catch (IllegalAccessException iae) {
+        throw new ServletException(iae);
+     }
+     catch (InstantiationException ie) {
+        throw new ServletException(ie);
+     }
+     catch (ClassCastException cce) {
+        throw new ServletException(cce);
+     }
+  }
 }

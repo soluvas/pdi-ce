@@ -1,13 +1,24 @@
- /* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.trans.steps.monetdbbulkloader;
 
@@ -80,7 +91,39 @@ public class MonetDBBulkLoaderMeta extends BaseStepMeta implements StepMetaInter
 	/** Encoding to use */
 	private String encoding;
 	
+	/** Truncate table? */
+	private boolean truncate = false;
 	
+	/** Auto adjust the table structure? */
+	private boolean autoSchema = false;
+		
+	/** Auto adjust strings that are too long? */
+	private boolean autoStringWidths = false;
+
+	public boolean isAutoStringWidths() {
+		return autoStringWidths;
+	}
+
+	public void setAutoStringWidths(boolean autoStringWidths) {
+		this.autoStringWidths = autoStringWidths;
+	}
+
+	public boolean isTruncate() {
+		return truncate;
+	}
+
+	public void setTruncate(boolean truncate) {
+		this.truncate = truncate;
+	}
+
+	public boolean isAutoSchema() {
+		return autoSchema;
+	}
+
+	public void setAutoSchema(boolean autoSchema) {
+		this.autoSchema = autoSchema;
+	}
+
 	/** The number of rows to buffer before passing them over to MonetDB.
 	 *  This number should be non-zero since we need to specify the number of rows we pass.
 	 */
@@ -200,6 +243,9 @@ public class MonetDBBulkLoaderMeta extends BaseStepMeta implements StepMetaInter
 			mClientPath         = XMLHandler.getTagValue(stepnode, "mclient_path");       //$NON-NLS-1$
 			logFile        = XMLHandler.getTagValue(stepnode, "log_file");     //$NON-NLS-1$
 			encoding       = XMLHandler.getTagValue(stepnode, "encoding");         //$NON-NLS-1$
+			truncate       = "Y".equals(XMLHandler.getTagValue(stepnode, "truncate"));         //$NON-NLS-1$
+			autoSchema     = "Y".equals(XMLHandler.getTagValue(stepnode, "auto_schema"));         //$NON-NLS-1$
+			autoStringWidths = "Y".equals(XMLHandler.getTagValue(stepnode, "auto_string_widths"));         //$NON-NLS-1$
 
 			int nrvalues = XMLHandler.countNodes(stepnode, "mapping");      //$NON-NLS-1$
 			allocate(nrvalues);
@@ -230,6 +276,9 @@ public class MonetDBBulkLoaderMeta extends BaseStepMeta implements StepMetaInter
 		mClientPath  = "/usr/local/bin/mclient";              //$NON-NLS-1$
 		logFile      = "";                                    //$NON-NLS-1$
         encoding     = "";                                    //$NON-NLS-1$
+        truncate 	 = false;
+        autoSchema   = false;
+        autoStringWidths = false;
         
 		allocate(0);
 	}
@@ -245,6 +294,9 @@ public class MonetDBBulkLoaderMeta extends BaseStepMeta implements StepMetaInter
 		retval.append("    ").append(XMLHandler.addTagValue("mclient_path", mClientPath));        //$NON-NLS-1$ //$NON-NLS-2$
 		retval.append("    ").append(XMLHandler.addTagValue("log_file",     logFile));       //$NON-NLS-1$ //$NON-NLS-2$
 		retval.append("    ").append(XMLHandler.addTagValue("encoding",     encoding));      //$NON-NLS-1$ //$NON-NLS-2$
+		retval.append("    ").append(XMLHandler.addTagValue("truncate",     truncate));      //$NON-NLS-1$ //$NON-NLS-2$
+		retval.append("    ").append(XMLHandler.addTagValue("auto_schema",     autoSchema));      //$NON-NLS-1$ //$NON-NLS-2$
+		retval.append("    ").append(XMLHandler.addTagValue("auto_string_widths",     autoStringWidths));      //$NON-NLS-1$ //$NON-NLS-2$
 		
 		for (int i=0;i<fieldTable.length;i++)
 		{
@@ -270,6 +322,9 @@ public class MonetDBBulkLoaderMeta extends BaseStepMeta implements StepMetaInter
 			mClientPath    =      rep.getStepAttributeString(id_step,  "mclient_path");         //$NON-NLS-1$
 			logFile        =      rep.getStepAttributeString(id_step,  "log_file");       //$NON-NLS-1$
 			encoding       =      rep.getStepAttributeString(id_step,  "encoding");       //$NON-NLS-1$
+			truncate       =      Boolean.parseBoolean(rep.getStepAttributeString(id_step,  "truncate"));       //$NON-NLS-1$
+			autoSchema     =      Boolean.parseBoolean(rep.getStepAttributeString(id_step,  "auto_schema"));       //$NON-NLS-1$
+			autoStringWidths =    Boolean.parseBoolean(rep.getStepAttributeString(id_step,  "auto_string_widths"));       //$NON-NLS-1$
 			
 			int nrvalues = rep.countNrStepAttributes(id_step, "stream_name");             //$NON-NLS-1$
 
@@ -303,6 +358,9 @@ public class MonetDBBulkLoaderMeta extends BaseStepMeta implements StepMetaInter
 			rep.saveStepAttribute(id_transformation, id_step, "log_file",        logFile);       //$NON-NLS-1$
 
 			rep.saveStepAttribute(id_transformation, id_step, "encoding",        encoding);      //$NON-NLS-1$
+			rep.saveStepAttribute(id_transformation, id_step, "truncate",        truncate);      //$NON-NLS-1$
+			rep.saveStepAttribute(id_transformation, id_step, "auto_schema",     autoSchema);      //$NON-NLS-1$
+			rep.saveStepAttribute(id_transformation, id_step, "auto_string_widths",     autoStringWidths);      //$NON-NLS-1$
 
 			for (int i=0;i<fieldTable.length;i++)
 			{
@@ -468,7 +526,18 @@ public class MonetDBBulkLoaderMeta extends BaseStepMeta implements StepMetaInter
 		}
 	}
 
-	public SQLStatement getSQLStatements(TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev) throws KettleStepException
+	public SQLStatement getTableDdl( TransMeta transMeta, String stepname, boolean autoSchema, MonetDBBulkLoaderData data ) throws KettleException
+	{
+
+			String name = stepname; // new name might not yet be linked to other steps!
+			StepMeta stepMeta = new StepMeta(BaseMessages.getString(PKG, "MonetDBBulkLoaderDialog.StepMeta.Title"), name, this); //$NON-NLS-1$
+			RowMetaInterface prev = transMeta.getPrevStepFields(stepname);
+
+			SQLStatement sql = getSQLStatements(transMeta, stepMeta, prev, autoSchema, data);
+			return sql;
+	}	
+
+	public SQLStatement getSQLStatements(TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev, boolean autoSchema, MonetDBBulkLoaderData data) throws KettleStepException
 	{
 		SQLStatement retval = new SQLStatement(stepMeta.getName(), databaseMeta, null); // default: nothing to do!
 
@@ -479,22 +548,42 @@ public class MonetDBBulkLoaderMeta extends BaseStepMeta implements StepMetaInter
                 // Copy the row
                 RowMetaInterface tableFields = new RowMeta();
 
-                // Now change the field names
-                for (int i=0;i<fieldTable.length;i++)
-                {
-                    ValueMetaInterface v = prev.searchValueMeta(fieldStream[i]);
-                    if (v!=null)
-                    {
-                        ValueMetaInterface tableField = v.clone();
-                        tableField.setName(fieldTable[i]);
+                if( autoSchema ) {
+                	// update the field table from the fields coming from the previous step
+                	List<ValueMetaInterface> fields = prev.getValueMetaList();
+                	fieldTable = new String[fields.size()];
+                	fieldStream = new String[fields.size()];
+                	fieldFormatOk = new boolean[fields.size()];
+                	int idx = 0;
+                	for( ValueMetaInterface field: fields) {
+                        ValueMetaInterface tableField = field.clone();
                         tableFields.addValueMeta(tableField);
-                    }
-                    else
-                    {
-                        throw new KettleStepException("Unable to find field ["+fieldStream[i]+"] in the input rows");
-                    }
+                        fieldTable[idx] = field.getName();
+                        fieldStream[idx] = field.getName();
+                        fieldFormatOk[idx] = true;
+                	}
+                	
+    				data.keynrs = new int[getFieldStream().length];
+    				for (int i=0;i<data.keynrs.length;i++) {
+    					data.keynrs[i] = i;
+    				}                } else {
+	                // Now change the field names
+	                for (int i=0;i<fieldTable.length;i++)
+	                {
+	                    ValueMetaInterface v = prev.searchValueMeta(fieldStream[i]);
+	                    if (v!=null)
+	                    {
+	                        ValueMetaInterface tableField = v.clone();
+	                        tableField.setName(fieldTable[i]);
+	                        tableFields.addValueMeta(tableField);
+	                    }
+	                    else
+	                    {
+	                        throw new KettleStepException("Unable to find field ["+fieldStream[i]+"] in the input rows");
+	                    }
+	                }
                 }
-
+	                
 				if (!Const.isEmpty(tableName))
 				{
                     Database db = new Database(loggingObject, databaseMeta);

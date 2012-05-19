@@ -1,14 +1,25 @@
- /* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
- 
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package org.pentaho.di.job;
 
 import java.net.URLEncoder;
@@ -96,6 +107,7 @@ public class Job extends Thread implements VariableSpace, NamedParams, HasLogCha
 	private LogLevel logLevel = DefaultLogLevel.getLogLevel();
 	private String containerObjectId;
 	private JobMeta jobMeta;
+	private int logCommitSize=10;
 	private Repository rep;
     private AtomicInteger errors;
 
@@ -191,6 +203,19 @@ public class Job extends Thread implements VariableSpace, NamedParams, HasLogCha
     maxJobEntriesLogged = Const.toInt(EnvUtil.getSystemProperty(Const.KETTLE_MAX_JOB_ENTRIES_LOGGED), 1000);
 
     result = null;
+    this.setDefaultLogCommitSize();
+  }
+
+  private void setDefaultLogCommitSize() {
+    String propLogCommitSize = this.getVariable("pentaho.log.commit.size");
+    if (propLogCommitSize != null) {
+      // override the logCommit variable
+      try {
+        logCommitSize = Integer.parseInt(propLogCommitSize);
+      } catch (Exception ignored) {
+        logCommitSize = 10; // ignore parsing error and default to 10
+      }
+    }
   }
 
 	public Job(Repository repository, JobMeta jobMeta)
@@ -797,6 +822,7 @@ public class Job extends Thread implements VariableSpace, NamedParams, HasLogCha
       Database ldb = new Database(this, logcon);
       ldb.shareVariablesWith(this);
         ldb.connect();
+      ldb.setCommit(logCommitSize);
 
       try {
         // See if we have to add a batch id...
@@ -950,6 +976,7 @@ public class Job extends Thread implements VariableSpace, NamedParams, HasLogCha
 				try
 				{
 					ldb.connect();
+  	            ldb.setCommit(logCommitSize);
 					ldb.writeLogRecord(jobMeta.getJobLogTable(), status, this, null);
 				}
 				catch(KettleDatabaseException dbe)
@@ -979,6 +1006,7 @@ public class Job extends Thread implements VariableSpace, NamedParams, HasLogCha
 			db = new Database(this, channelLogTable.getDatabaseMeta());
 			db.shareVariablesWith(this);
 			db.connect();
+			db.setCommit(logCommitSize);
 			
 			List<LoggingHierarchy> loggingHierarchyList = getLoggingHierarchy();
 			for (LoggingHierarchy loggingHierarchy : loggingHierarchyList) {
@@ -1004,6 +1032,7 @@ public class Job extends Thread implements VariableSpace, NamedParams, HasLogCha
         db = new Database(this, jobEntryLogTable.getDatabaseMeta());
         db.shareVariablesWith(this);
         db.connect();
+        db.setCommit(logCommitSize);
         
         for (JobEntryCopy copy : jobMeta.getJobCopies()) {
           db.writeLogRecord(jobEntryLogTable, LogStatus.START, copy, this);

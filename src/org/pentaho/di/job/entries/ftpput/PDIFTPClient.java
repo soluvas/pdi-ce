@@ -1,22 +1,31 @@
-/* 
- * Copyright (c) 2010 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.
- */
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.job.entries.ftpput;
 
 import java.io.IOException;
 import java.text.ParseException;
 
-import org.apache.log4j.Logger;
+import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.i18n.BaseMessages;
 
 import com.enterprisedt.net.ftp.FTPClient;
@@ -44,14 +53,16 @@ public class PDIFTPClient extends FTPClient {
   private boolean sizeSupported = true;
 
   private static Class<?> PKG = PDIFTPClient.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
-  private static Logger log4j = Logger.getLogger(PDIFTPClient.class);
+  private LogChannelInterface log;
 
-  public PDIFTPClient() {
-    super();
-    log4j.info(BaseMessages.getString(PKG, "PDIFTPClient.DEBUG.Using.Overridden.FTPClient")); //$NON-NLS-1$
-  }
   
-  /*
+  public PDIFTPClient(LogChannelInterface log) {
+	  super();
+	  this.log = log;
+	  log.logBasic(BaseMessages.getString(PKG, "PDIFTPClient.DEBUG.Using.Overridden.FTPClient")); //$NON-NLS-1$
+  }
+
+/*
    *  (non-Javadoc)
    * @see com.enterprisedt.net.ftp.FTPClientInterface#exists(java.lang.String)
    */
@@ -68,7 +79,7 @@ public class PDIFTPClient extends FTPClient {
         return false;
 
       sizeSupported = false;
-      log4j.debug("SIZE not supported - trying MDTM"); //$NON-NLS-1$
+      log.logDebug("SIZE not supported - trying MDTM"); //$NON-NLS-1$
     }
 
     // then try the MDTM command
@@ -81,7 +92,7 @@ public class PDIFTPClient extends FTPClient {
         return false;
 
       mdtmSupported = false;
-      log4j.debug("MDTM not supported - trying LIST"); //$NON-NLS-1$
+      log.logDebug("MDTM not supported - trying LIST"); //$NON-NLS-1$
     }
 
     try {
@@ -93,7 +104,7 @@ public class PDIFTPClient extends FTPClient {
       }
       return false;
     } catch (ParseException ex) {
-      log4j.warn(ex.getMessage());
+      log.logBasic(ex.getMessage());
       return false;
     }
   }

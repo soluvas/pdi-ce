@@ -1,13 +1,24 @@
-/* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
-* This software was developed by Pentaho Corporation and is provided under the terms 
-* of the GNU Lesser General Public License, Version 2.1. You may not use 
-* this file except in compliance with the license. If you need a copy of the license, 
-* please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
-* Data Integration.  The Initial Developer is Pentaho Corporation.
-*
-* Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
-* basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
-* the license for the specific language governing your rights and limitations.*/
+/*******************************************************************************
+ *
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.ui.spoon.job;
 
@@ -20,6 +31,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.MessageDialogWithToggle;
@@ -90,6 +102,8 @@ import org.pentaho.di.core.logging.CentralLogStore;
 import org.pentaho.di.core.logging.HasLogChannelInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.logging.LogParentProvidedInterface;
+import org.pentaho.di.core.logging.LoggingObjectType;
+import org.pentaho.di.core.logging.SimpleLoggingObject;
 import org.pentaho.di.core.vfs.KettleVFS;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.job.Job;
@@ -276,8 +290,6 @@ public class JobGraph extends AbstractGraph implements XulEventHandler, Redrawab
 	private Point[]											previous_step_locations;
 	private Point[]											previous_note_locations;
 	private JobEntryCopy									currentEntry;
-
-	private XulDomContainer xulDomContainer;
 	
 public JobGraph(Composite par, final Spoon spoon, final JobMeta jobMeta) {
     super(par, SWT.NONE);
@@ -2249,12 +2261,18 @@ public JobGraph(Composite par, final Spoon spoon, final JobMeta jobMeta) {
         
         // Open the transformation or create a new one...
         //
-        boolean exists = spoon.rep.getTransformationID(exactTransname, spoon.rep.findDirectory(entry.getDirectory())) != null;
+        // But first we look to see if the directory does exist
+        RepositoryDirectoryInterface repositoryDirectoryInterface = spoon.rep.findDirectory(jobMeta.environmentSubstitute(entry.getDirectory()));
+        if (repositoryDirectoryInterface== null) {
+           throw new Exception(BaseMessages.getString(PKG, "JobGraph.Exception.DirectoryDoesNotExist", jobMeta.environmentSubstitute(entry.getDirectory())));
+        }
+        
+        boolean exists = spoon.rep.getTransformationID(exactTransname, repositoryDirectoryInterface) != null;
         if (!exists) {
           launchTransMeta = new TransMeta(null, exactTransname, entry.arguments);
         } 
         else {
-          launchTransMeta = spoon.rep.loadTransformation(exactTransname, spoon.rep.findDirectory(entry.getDirectory()), null, true, null); // reads last version
+          launchTransMeta = spoon.rep.loadTransformation(exactTransname, spoon.rep.findDirectory(jobMeta.environmentSubstitute(entry.getDirectory())), null, true, null); // reads last version
         }
         break;
       case REPOSITORY_BY_REFERENCE:
@@ -3098,9 +3116,14 @@ public static void copyInternalJobVariables(JobMeta sourceJobMeta, TransMeta tar
 			} else {
 			  runJobMeta = new JobMeta(jobMeta.getFilename(), null, null);
 			}
-		    
-			job = new Job(spoon.rep, runJobMeta);
-        	  job.setLogLevel(executionConfiguration.getLogLevel());
+
+            String spoonObjectId = UUID.randomUUID().toString();
+            SimpleLoggingObject spoonLoggingObject = new SimpleLoggingObject("SPOON", LoggingObjectType.SPOON, null);
+            spoonLoggingObject.setContainerObjectId(spoonObjectId);
+            spoonLoggingObject.setLogLevel(executionConfiguration.getLogLevel());
+			job = new Job(spoon.rep, runJobMeta, spoonLoggingObject);
+			
+			job.setLogLevel(executionConfiguration.getLogLevel());
             // job = new Job(jobMeta.getName(), jobMeta.getFilename(), null);
             // job.open(spoon.rep, jobMeta.getFilename(), jobMeta.getName(), jobMeta.getRepositoryDirectory().getPath(), spoon);
             job.getJobMeta().setArguments(jobMeta.getArguments());

@@ -1,13 +1,24 @@
-/* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.job.entries.trans;
 
@@ -35,9 +46,8 @@ import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleDatabaseException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleXMLException;
-import org.pentaho.di.core.logging.Log4jFileAppender;
+import org.pentaho.di.core.logging.LogChannelFileWriter;
 import org.pentaho.di.core.logging.LogLevel;
-import org.pentaho.di.core.logging.LogWriter;
 import org.pentaho.di.core.parameters.NamedParams;
 import org.pentaho.di.core.parameters.NamedParamsDefault;
 import org.pentaho.di.core.variables.VariableSpace;
@@ -531,7 +541,7 @@ public class JobEntryTrans extends JobEntryBase implements Cloneable, JobEntryIn
 	{
 		result.setEntryNr( nr );
 
-		Log4jFileAppender appender = null;
+    LogChannelFileWriter logChannelFileWriter = null;
 		
 		LogLevel transLogLevel = parentJob.getLogLevel();
 		
@@ -559,8 +569,8 @@ public class JobEntryTrans extends JobEntryBase implements Cloneable, JobEntryIn
         	}
             try
             {
-                appender = LogWriter.createFileAppender(realLogFilename, true,setAppendLogfile);
-                LogWriter.getInstance().addAppender(appender);
+              logChannelFileWriter = new LogChannelFileWriter(this.getLogChannelId(), KettleVFS.getFileObject(realLogFilename), setAppendLogfile);
+              logChannelFileWriter.startLogging();
             }
             catch(KettleException e)
             {
@@ -1068,27 +1078,24 @@ public class JobEntryTrans extends JobEntryBase implements Cloneable, JobEntryIn
             iteration++;
         }
         
-        /*
-        for (String childId : LoggingRegistry.getInstance().getLogChannelChildren(parentJob.getLogChannelId())) {
-          LoggingObjectInterface loggingObject = LoggingRegistry.getInstance().getLoggingObject(childId);
-          LoggingObjectInterface parent = loggingObject.getParent();
-          System.out.println("child log channel id="+childId+" : "+loggingObject.getObjectName()+":"+loggingObject.getObjectType()+"  parent="+(parent!=null?parent.getObjectName():""));
-        }
-        
-        CentralLogStore.getAppender().getBuffer(parentJob.getLogChannelId(), false);
-
-        */
-        
         if (setLogfile)
         {
-            if (appender!=null)
-            {
-            	LogWriter.getInstance().removeAppender(appender);
-                appender.close();
+          if (logChannelFileWriter != null) {
+            logChannelFileWriter.stopLogging();
 
-                ResultFile resultFile = new ResultFile(ResultFile.FILE_TYPE_LOG, appender.getFile(), parentJob.getJobname(), getName());
-                result.getResultFiles().put(resultFile.getFile().toString(), resultFile);
+            ResultFile resultFile = new ResultFile(ResultFile.FILE_TYPE_LOG, logChannelFileWriter.getLogFile(), parentJob.getJobname(), getName());
+            result.getResultFiles().put(resultFile.getFile().toString(), resultFile);
+            
+            // See if anything went wrong during file writing...
+            //
+            if (logChannelFileWriter.getException()!=null) {
+              logError("Unable to open log file [" + getLogFilename() + "] : ");
+              logError(Const.getStackTracker(logChannelFileWriter.getException()));
+              result.setNrErrors(1);
+              result.setResult(false);
+              return result;
             }
+          }
         }
 
 		if (result.getNrErrors()==0)

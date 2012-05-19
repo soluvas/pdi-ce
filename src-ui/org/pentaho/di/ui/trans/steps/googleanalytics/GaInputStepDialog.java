@@ -1,21 +1,24 @@
-//
-// Google Analytics Plugin for Pentaho PDI a.k.a. Kettle
-// 
-// Copyright (C) 2010 Slawomir Chodnicki
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+/*******************************************************************************
+ *
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.ui.trans.steps.googleanalytics;
 
@@ -168,13 +171,13 @@ public class GaInputStepDialog extends BaseStepDialog implements StepDialogInter
 
 	private Text wLimit;
 
-	final static String REFERENCE_SORT_URI = "http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#sort";
-	final static String REFERENCE_METRICS_URI = "http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#metrics";
-	final static String REFERENCE_DIMENSIONS_URI = "http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#dimensions";
-	final static String REFERENCE_SEGMENT_URI = "http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#segment";
-	final static String REFERENCE_FILTERS_URI = "http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#filters";
-	final static String REFERENCE_DIMENSION_AND_METRIC_URI = "http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDimensionsMetrics.html";
-	final static String REFERENCE_TABLE_ID_URI = "http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#ids";
+	final static String REFERENCE_SORT_URI = "http://code.google.com/apis/analytics/docs/gdata/v2/gdataReferenceDataFeed.html#sort";
+	final static String REFERENCE_METRICS_URI = "http://code.google.com/apis/analytics/docs/gdata/v2/gdataReferenceDataFeed.html#metrics";
+	final static String REFERENCE_DIMENSIONS_URI = "http://code.google.com/apis/analytics/docs/gdata/v2/gdataReferenceDataFeed.html#dimensions";
+	final static String REFERENCE_SEGMENT_URI = "http://code.google.com/apis/analytics/docs/gdata/v2/gdataReferenceDataFeed.html#segment";
+	final static String REFERENCE_FILTERS_URI = "http://code.google.com/apis/analytics/docs/gdata/v2/gdataReferenceDataFeed.html#filters";
+	final static String REFERENCE_DIMENSION_AND_METRIC_URI = "http://code.google.com/apis/analytics/docs/gdata/v2/gdataReferenceDimensionsMetrics.html";
+	final static String REFERENCE_TABLE_ID_URI = "http://code.google.com/apis/analytics/docs/gdata/v2/gdataReferenceDataFeed.html#ids";
 	final static String WEBSITE_URL = "http://type-exit.org/adventures-with-open-source-bi/google-analytics-plugin-for-kettle/";
 
 	// constructor

@@ -1,22 +1,26 @@
-/* * Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
- 
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.trans.steps.jsonoutput;
-
-
-
-import java.io.BufferedOutputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 
 import org.apache.commons.vfs.FileObject;
 import org.codehaus.jackson.JsonNode;
@@ -54,51 +58,98 @@ public class JsonOutput extends BaseStep implements StepInterface
     public JsonOutput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta, Trans trans)
     {
         super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
+        
+        //   Here we decide whether or not to build the structure in
+        //   compatible mode or fixed mode
+        JsonOutputMeta jsonOutputMeta = (JsonOutputMeta)(stepMeta.getStepMetaInterface());
+        if (jsonOutputMeta.isCompatibilityMode()) {
+           compatibilityFactory = new CompatibilityMode();
+        }
+        else {
+           compatibilityFactory = new FixedMode();
+        }
+    }
+
+    private interface CompatibilityFactory  {
+       public void execute(Object[] row) throws KettleException;
     }
     
     @SuppressWarnings("unchecked")
-	public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException
-    {
-        meta=(JsonOutputMeta)smi;
-        data=(JsonOutputData)sdi;
+    private class CompatibilityMode implements CompatibilityFactory {
+       public void execute(Object[] row) throws KettleException {
+       
+          for (int i=0;i<data.nrFields;i++) {
+             JsonOutputField outputField = meta.getOutputFields()[i];
+             
+             ValueMetaInterface v = data.inputRowMeta.getValueMeta(data.fieldIndexes[i]);
+             
+             // Create a new object with specified fields
+             JSONObject jo = new JSONObject();
 
-        Object[] r = getRow();       // This also waits for a row to be finished.
-        if (r==null)  {
-        	 // no more input to be expected...
-        	if(!data.rowsAreSafe) {
-        		// Let's output the remaining unsafe data
-                outPutRow(r);
-            }
-            
-            setOutputDone();
-            return false;
-        }
-        
-        if (first)  {
-        	first=false;
-        	data.inputRowMeta=getInputRowMeta();
-        	data.inputRowMetaSize=data.inputRowMeta.size();
-        	if(data.outputValue) {
-        		data.outputRowMeta = data.inputRowMeta.clone();
-        		meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
-        	}
-        	
-        	// Cache the field name indexes
-        	//
-        	data.nrFields=meta.getOutputFields().length;
-        	data.fieldIndexes = new int[data.nrFields];
-        	for (int i=0;i<data.nrFields;i++) {
-        		data.fieldIndexes[i] = data.inputRowMeta.indexOfValue(meta.getOutputFields()[i].getFieldName());
-        		if (data.fieldIndexes[i]<0) {
-        			throw new KettleException(BaseMessages.getString(PKG, "JsonOutput.Exception.FieldNotFound")); //$NON-NLS-1$
-        		}
-        		JsonOutputField field = meta.getOutputFields()[i];
-        		field.setElementName(environmentSubstitute(field.getElementName()));
-        	}
-        }
-        
-        data.rowsAreSafe=false;
+             switch (v.getType()) {
+                case ValueMeta.TYPE_BOOLEAN:
+                   jo.put(outputField.getElementName(), data.inputRowMeta.getBoolean(row, data.fieldIndexes[i]));
+                   break;
+                case ValueMeta.TYPE_INTEGER:
+                   jo.put(outputField.getElementName(), data.inputRowMeta.getInteger(row, data.fieldIndexes[i]));
+                   break;
+                case ValueMeta.TYPE_NUMBER:
+                   jo.put(outputField.getElementName(), data.inputRowMeta.getNumber(row, data.fieldIndexes[i]));
+                   break;
+                case ValueMeta.TYPE_BIGNUMBER:
+                   jo.put(outputField.getElementName(), data.inputRowMeta.getBigNumber(row, data.fieldIndexes[i]));
+                   break;
+                default:
+                   jo.put(outputField.getElementName(), data.inputRowMeta.getString(row, data.fieldIndexes[i]));
+                   break;
+              }
+              data.ja.add(jo);     
+          }
 
+          data.nrRow++;
+          
+          if(data.nrRowsInBloc>0) {
+             System.out.println("data.nrRow%data.nrRowsInBloc = "+ data.nrRow%data.nrRowsInBloc);
+             if(data.nrRow%data.nrRowsInBloc==0) {
+                // We can now output an object
+                System.out.println("outputting the row.");
+                outPutRow(row);
+             }
+          }
+       }
+    }
+    
+    @SuppressWarnings("unchecked")
+    private class FixedMode implements CompatibilityFactory {
+       public void execute(Object[] row) throws KettleException {
+          
+          // Create a new object with specified fields
+          JSONObject jo = new JSONObject();
+                  
+          for (int i=0;i<data.nrFields;i++) {
+              JsonOutputField outputField = meta.getOutputFields()[i];
+              
+              ValueMetaInterface v = data.inputRowMeta.getValueMeta(data.fieldIndexes[i]);
+              
+              switch (v.getType()) {
+                 case ValueMeta.TYPE_BOOLEAN:
+                    jo.put(outputField.getElementName(), data.inputRowMeta.getBoolean(row, data.fieldIndexes[i]));
+                    break;
+                 case ValueMeta.TYPE_INTEGER:
+                    jo.put(outputField.getElementName(), data.inputRowMeta.getInteger(row, data.fieldIndexes[i]));
+                    break;
+                 case ValueMeta.TYPE_NUMBER:
+                    jo.put(outputField.getElementName(), data.inputRowMeta.getNumber(row, data.fieldIndexes[i]));
+                    break;
+                 case ValueMeta.TYPE_BIGNUMBER:
+                    jo.put(outputField.getElementName(), data.inputRowMeta.getBigNumber(row, data.fieldIndexes[i]));
+                    break;
+                 default:
+                    jo.put(outputField.getElementName(), data.inputRowMeta.getString(row, data.fieldIndexes[i]));
+                    break;
+              }           
+          }
+          data.ja.add(jo);
 
         // Create a new object with specified fields
         ObjectNode jo = data.mapper.createObjectNode();
@@ -134,19 +185,17 @@ public class JsonOutput extends BaseStep implements StepInterface
         data.jsonArray.add(jo);
         data.nrRow++;
         
-        if(data.nrRowsInBloc>0) {
-	        if(data.nrRow%data.nrRowsInBloc==0) {
+        if (data.nrRowsInBloc > 0) {
+            log.debug("data.nrRow % data.nrRowsInBloc = {}", data.nrRow % data.nrRowsInBloc);
+	        if (data.nrRow % data.nrRowsInBloc == 0) {
 	        	// We can now output an object
+                log.debug("outputting the row: {}", r);
 	        	outPutRow(r);
 	        }
         }
-        
-		if(data.writeToFile && !data.outputValue) {
-			putRow(data.inputRowMeta,r ); // in case we want it go further...
-			incrementLinesOutput();
-		}
-        return true;
-     }    
+    }
+
+    private CompatibilityFactory compatibilityFactory;    
     
     @SuppressWarnings("unchecked")
 	private void outPutRow(Object[] rowData) throws KettleStepException {
@@ -209,6 +258,98 @@ public class JsonOutput extends BaseStep implements StepInterface
         data.jsonArray = data.mapper.createArrayNode();
     }
 
+    public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
+       
+       meta=(JsonOutputMeta)smi;
+       data=(JsonOutputData)sdi;
+
+       Object[] r = getRow();       // This also waits for a row to be finished.
+       if (r==null)  {
+         // no more input to be expected...
+        if(!data.rowsAreSafe) {
+           // Let's output the remaining unsafe data
+               outPutRow(r);
+           }
+           
+           setOutputDone();
+           return false;
+       }
+       
+       if (first)  {
+        first=false;
+        data.inputRowMeta=getInputRowMeta();
+        data.inputRowMetaSize=data.inputRowMeta.size();
+        if(data.outputValue) {
+           data.outputRowMeta = data.inputRowMeta.clone();
+           meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
+        }
+
+        return false;
+    }
+    
+    public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
+        meta=(JsonOutputMeta)smi;
+        data=(JsonOutputData)sdi;
+        if(data.jsonArray!=null) data.jsonArray=null;
+        closeFile();
+        super.dispose(smi, sdi);
+        
+        // Cache the field name indexes
+        //
+        data.nrFields=meta.getOutputFields().length;
+        data.fieldIndexes = new int[data.nrFields];
+        for (int i=0;i<data.nrFields;i++) {
+           data.fieldIndexes[i] = data.inputRowMeta.indexOfValue(meta.getOutputFields()[i].getFieldName());
+           if (data.fieldIndexes[i]<0) {
+              throw new KettleException(BaseMessages.getString(PKG, "JsonOutput.Exception.FieldNotFound")); //$NON-NLS-1$
+           }
+           JsonOutputField field = meta.getOutputFields()[i];
+           field.setElementName(environmentSubstitute(field.getElementName()));
+        }
+       }
+       
+       data.rowsAreSafe=false;
+       compatibilityFactory.execute(r);
+       
+     if(data.writeToFile && !data.outputValue) {
+        putRow(data.inputRowMeta,r ); // in case we want it go further...
+        incrementLinesOutput();
+     }
+       return true;
+    }    
+        
+   @SuppressWarnings("unchecked")
+	private void outPutRow(Object[] rowData) throws KettleStepException {
+    	// We can now output an object
+		data.jg = new JSONObject();
+		data.jg.put(data.realBlocName, data.ja);
+		String value = data.jg.toJSONString();
+		
+		if(data.outputValue) {
+			Object[] outputRowData = RowDataUtil.addValueData(rowData, data.inputRowMetaSize, value);
+			incrementLinesOutput();
+			putRow(data.outputRowMeta, outputRowData);
+		}
+		
+		if(data.writeToFile) {
+			// Open a file
+			if (!openNewFile()) {
+				throw new KettleStepException(BaseMessages.getString(PKG, "JsonOutput.Error.OpenNewFile", buildFilename()));
+			}
+			// Write data to file
+			try {
+				data.writer.write(value);
+			}catch(Exception e) {
+				throw new KettleStepException(BaseMessages.getString(PKG, "JsonOutput.Error.Writing"), e);
+			}
+			// Close file
+			closeFile();
+		}
+        // Data are safe
+        data.rowsAreSafe=true;
+        data.ja = new JSONArray();
+    }
+
     public boolean init(StepMetaInterface smi, StepDataInterface sdi)
     {
         meta=(JsonOutputMeta)smi;
@@ -258,7 +399,8 @@ public class JsonOutput extends BaseStep implements StepInterface
     public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
         meta=(JsonOutputMeta)smi;
         data=(JsonOutputData)sdi;
-        if(data.jsonArray!=null) data.jsonArray=null;
+        if(data.ja!=null) data.ja=null;
+        if(data.jg!=null) data.jg=null;
         closeFile();
         super.dispose(smi, sdi);
         

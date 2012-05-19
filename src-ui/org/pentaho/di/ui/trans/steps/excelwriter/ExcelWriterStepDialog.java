@@ -1,21 +1,24 @@
-//
-// Excel Writer plugin for Pentaho PDI a.k.a. Kettle
-// 
-// Copyright (C) 2010 Slawomir Chodnicki
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+/*******************************************************************************
+ *
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.ui.trans.steps.excelwriter;
 
@@ -687,13 +690,6 @@ public class ExcelWriterStepDialog extends BaseStepDialog implements StepDialogI
 		wIfSheetExists.addModifyListener(lsMod);
 		wIfSheetExists.setToolTipText(BaseMessages.getString(PKG, "ExcelWriterDialog.IfSheetExists.Tooltip"));
 
-		//		wIfSheetExists.addSelectionListener(new SelectionAdapter() {
-		//			public void widgetSelected(SelectionEvent e) {
-		//				input.setChanged();
-		//				EnableIfSheetExists();
-		//			}
-		//		});
-
 		FormData fdIfSheetExists = new FormData();
 		fdIfSheetExists.left = new FormAttachment(middle, 0);
 		fdIfSheetExists.top = new FormAttachment(wMakeActiveSheet, margin);
@@ -1265,6 +1261,7 @@ public class ExcelWriterStepDialog extends BaseStepDialog implements StepDialogI
 		fdFields.bottom = new FormAttachment(wGet, -margin);
 		wFields.setLayoutData(fdFields);
 		wFields.addModifyListener(lsMod);
+		
 		// Search the fields in the background
 
 		final Runnable runnable = new Runnable() {
@@ -1319,10 +1316,6 @@ public class ExcelWriterStepDialog extends BaseStepDialog implements StepDialogI
 		sc.setLayoutData(fdSc);
 		
 		sc.setContent(wTabFolder);
-		//wTabFolder.setSize();
-		sc.setMinSize(wTabFolder.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-		sc.setExpandHorizontal(true);
-		sc.setExpandVertical(true);
 
 		// ///////////////////////////////////////////////////////////
 		// / END OF CONTENT TAB
@@ -1454,9 +1447,6 @@ public class ExcelWriterStepDialog extends BaseStepDialog implements StepDialogI
 
 		wTabFolder.setSelection(0);
 
-		// Set the shell size, based upon previous time...
-		setSize(shell, 600, 600, true);
-
 		getData();
 		setDateTimeFormat();
 		enableExtension();
@@ -1465,6 +1455,24 @@ public class ExcelWriterStepDialog extends BaseStepDialog implements StepDialogI
 		enableTemplateSheet();
 		input.setChanged(changed);
 
+		// artificially reduce table size
+		for(int t=0;t<wFields.table.getColumnCount();t++)
+			wFields.table.getColumn(t).setWidth(20);
+		
+		wFields.layout();
+		wFields.pack();
+
+		// determine scrollable area
+		sc.setMinSize(wTabFolder.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+		sc.setExpandHorizontal(true);
+		sc.setExpandVertical(true);
+		
+		// set window size
+		setSize(shell, 600, 600, true);
+		
+		// restore optimal column widths
+		wFields.optWidth(true);
+				
 		shell.open();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())

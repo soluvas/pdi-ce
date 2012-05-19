@@ -1,3 +1,24 @@
+/*******************************************************************************
+ *
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.job.entries.pgpencryptfiles;
 
@@ -11,6 +32,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
 import org.apache.commons.vfs.FileObject;
+import org.apache.commons.vfs.FileType;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -95,8 +117,34 @@ public class GPG {
 	public GPG(String gpgFilename, LogChannelInterface logInterface) throws KettleException {
 		this.log=logInterface;
 		this.gpgexe=gpgFilename;
+		// Let's check GPG filename
 		if(Const.isEmpty(getGpgExeFile())) {
+			// No filename specified
 			throw new KettleException(BaseMessages.getString(PKG, "GPG.GPGFilenameMissing"));
+		}
+		// We have a filename, we need to check
+		FileObject file =null;
+		try {
+			file = KettleVFS.getFileObject(getGpgExeFile());
+			
+			if(!file.exists()) {
+				throw new KettleException(BaseMessages.getString(PKG, "GPG.GPGFilenameNotFound"));
+			}
+			// The file exists
+			if(!file.getType().equals(FileType.FILE)) {
+				throw new KettleException(BaseMessages.getString(PKG, "GPG.GPGNotAFile"));
+			}
+			
+			// Ok we have a real file
+			// Get the local filename
+			this.gpgexe= KettleVFS.getFilename(file);
+			
+		}catch(Exception e) {
+			throw new KettleException(BaseMessages.getString(PKG, "GPG.ErrorCheckingGPGFile"), e);
+		}finally {
+			try {
+				if(file!=null) file.close();
+			}catch(Exception e){}
 		}
 	}
 	
@@ -126,12 +174,17 @@ public class GPG {
 		String		command = getGpgExeFile() + " " + (fileMode?"":gnuPGCommand + " ")  + commandArgs;
 	
 		if(log.isDebug()) {
-			log.logDebug(toString(), BaseMessages.getString(PKG, "GPG.RunningCommand", command));
+			log.logDebug(BaseMessages.getString(PKG, "GPG.RunningCommand", command));
 		}
 		String retval;
 
 		try {
-			p = Runtime.getRuntime().exec(command);
+      if (Const.isWindows()) {
+        p = Runtime.getRuntime().exec(command);
+      } else {
+        ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", "-c", command);
+        p = processBuilder.start();
+      }
 		} catch(IOException io) {
 			throw new KettleException(BaseMessages.getString(PKG, "GPG.IOException"), io);
 		}

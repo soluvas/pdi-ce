@@ -1,13 +1,24 @@
-/* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.ui.spoon;
 
@@ -351,6 +362,8 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
   private Display display;
 
   private Shell shell;
+  
+  private static Splash splash;
 
   private boolean destroy;
 
@@ -494,6 +507,7 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
    *            Arguments are available in the "Get System Info" step.
    */
   public static void main(String[] a) throws KettleException {
+    
     try {
       // Bootstrap Kettle
       //
@@ -512,7 +526,7 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
 
       // The core plugin types don't know about UI classes. Add them in now
       // before the PluginRegistry inits.
-      Splash splash = new Splash(display);
+      splash = new Splash(display);
 
       registerUIPluginObjectTypes();
 
@@ -550,7 +564,7 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
       }
 
       staticSpoon.setArguments(args.toArray(new String[args.size()]));
-      staticSpoon.start(splash, commandLineOptions);
+      staticSpoon.start(commandLineOptions);
     } catch (Throwable t) {
       // avoid calls to Messages i18n method getString() in this block
       // We do this to (hopefully) also catch Out of Memory Exceptions
@@ -3963,6 +3977,7 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
       }
       if (!loaded) {
         // Give error back
+        hideSplash();
         MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
         mb.setMessage(BaseMessages.getString(PKG, "Spoon.UnknownFileType.Message", fname));
         mb.setText(BaseMessages.getString(PKG, "Spoon.UnknownFileType.Title"));
@@ -5066,10 +5081,10 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
         releaseText = BaseMessages.getString(PKG, "Spoon.Candidate.HelpAboutText");
     } else if (Const.RELEASE.equals(Const.ReleaseType.MILESTONE)) {
       releaseText = BaseMessages.getString(PKG, "Spoon.Milestone.HelpAboutText");
+    } else if (Const.RELEASE.equals(Const.ReleaseType.STABLE)) {
+          releaseText = BaseMessages.getString(PKG, "Spoon.Stable.HelpAboutText");
     } else if (Const.RELEASE.equals(Const.ReleaseType.GA)) {
       releaseText = BaseMessages.getString(PKG, "Spoon.GA.HelpAboutText");
-    } else if (Const.RELEASE.equals(Const.ReleaseType.STABLE)) {
-        releaseText = BaseMessages.getString(PKG, "Spoon.Stable.HelpAboutText");  
     }
 
     //  build a message
@@ -6699,10 +6714,10 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
     return APP_NAME;
   }
 
-  public void selectRep(Splash splash, CommandLineOption[] options) {
+  public void selectRep(CommandLineOption[] options) {
     RepositoryMeta repositoryMeta = null;
     // UserInfo userinfo = null;
-
+    
     StringBuffer optionRepname = getCommandLineOption(options, "rep").getArgument();
     StringBuffer optionFilename = getCommandLineOption(options, "file").getArgument();
     StringBuffer optionUsername = getCommandLineOption(options, "user").getArgument();
@@ -6714,7 +6729,6 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
         log.logBasic(BaseMessages.getString(PKG, "Spoon.Log.AskingForRepository"));
       }
 
-      splash.hide();
       loginDialog = new RepositoriesDialog(shell, null, new ILoginCallback() {
 
         public void onSuccess(Repository repository) {
@@ -6728,7 +6742,7 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
                 "Spoon.Dialog.LoginFailed.Title"), t.getLocalizedMessage());
             dialog.open();
           } else {
-            new ErrorDialog(loginDialog.getShell(), BaseMessages.getString(PKG, "Spoon.Dialog.LoginFailed.Title"), BaseMessages.getString(PKG, "Spoon.Dialog.LoginFailed.Message", t), t);
+             new ErrorDialog(loginDialog.getShell(), BaseMessages.getString(PKG, "Spoon.Dialog.LoginFailed.Title"), BaseMessages.getString(PKG, "Spoon.Dialog.LoginFailed.Message", t), t);
           }
         }
 
@@ -6736,7 +6750,9 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
           // do nothing
         }
       });
+      hideSplash();
       loginDialog.show();
+      showSplash();
     } 
     else if (!Const.isEmpty(optionRepname) && Const.isEmpty(optionFilename)) {
       RepositoriesMeta repsinfo = new RepositoriesMeta();
@@ -6780,9 +6796,12 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
 
             }
           });
+          hideSplash();
           loginDialog.show();
+          showSplash();
         }
       } catch (Exception e) {
+        hideSplash();
         // Eat the exception but log it...
         log.logError("Error reading repositories xml file", e);
       }
@@ -6861,6 +6880,7 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
         }
       }
     } catch (KettleException ke) {
+      hideSplash();
       log.logError(BaseMessages.getString(PKG, "Spoon.Log.ErrorOccurred") + Const.CR + ke.getMessage());// "An error occurred: "
       log.logError(Const.getStackTracker(ke));
       // do not just eat the exception
@@ -6885,6 +6905,7 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
             loadLastUsedFile(lastUsedFile, rep == null ? null : rep.getName(), false);
           }
         } catch(Exception e) {
+          hideSplash();
           new ErrorDialog(shell, BaseMessages.getString(PKG, "Spoon.LoadLastUsedFile.Exception.Title"), 
               BaseMessages.getString(PKG, "Spoon.LoadLastUsedFile.Exception.Message", lastUsedFile.toString()), e);
         }
@@ -6892,11 +6913,11 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
     }
   }
 
-  public void start(Splash splash, CommandLineOption[] options) throws KettleException {
+  public void start(CommandLineOption[] options) throws KettleException {
 
     // Show the repository connection dialog
     //
-    selectRep(splash, options);
+    selectRep(options);
      
     // Read the start option parameters
     //
@@ -6916,6 +6937,8 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
 
     if (props.showTips()) {
       TipsDialog tip = new TipsDialog(shell);
+      
+      hideSplash();
       tip.open();
     }
     if (splash != null) {
@@ -8126,5 +8149,17 @@ public class Spoon implements AddUndoPositionInterface, TabListener, SpoonInterf
 	        menuController.updateMenu(doc);
 	      }
         }
+    }
+        
+    public void hideSplash() {
+       if (splash!=null) {
+          splash.hide();
+       }
+    }
+    
+    private void showSplash() {
+       if (splash != null) {
+          splash.show();
+       }
     }
 }

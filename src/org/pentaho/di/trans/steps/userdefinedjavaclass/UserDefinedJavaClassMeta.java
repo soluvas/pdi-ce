@@ -1,25 +1,24 @@
-/***** BEGIN LICENSE BLOCK *****
-The contents of this package are subject to the GNU Lesser Public License
- (the "License"); you may not use this file except in compliance with
-the License. You may obtain a copy of the License at
-http://www.gnu.org/licenses/lgpl-2.1.txt
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-for the specific language governing rights and limitations under the
-License.
-
-The Original Code is Kettle User Defined Java Class Step
-
-The Initial Developer of the Original Code is
-Daniel Einspanjer deinspanjer@mozilla.com
-Portions created by the Initial Developer are Copyright (C) 2009
-the Initial Developer. All Rights Reserved.
-
-Contributor(s):
-Matt Casters mcaster@pentaho.com
-
-***** END LICENSE BLOCK *****/
+/*******************************************************************************
+ *
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.trans.steps.userdefinedjavaclass;
 
@@ -87,7 +86,7 @@ public class UserDefinedJavaClassMeta extends BaseStepMeta implements StepMetaIn
     private List<FieldInfo>               fields      = new ArrayList<FieldInfo>();
     private List<UserDefinedJavaClassDef> definitions = new ArrayList<UserDefinedJavaClassDef>();
     public Class<TransformClassBase> cookedTransformClass;
-    public final List<Exception> cookErrors = new ArrayList<Exception>(0);
+    public List<Exception> cookErrors = new ArrayList<Exception>(0);
     
     private boolean clearingResultFields;
     
@@ -98,7 +97,7 @@ public class UserDefinedJavaClassMeta extends BaseStepMeta implements StepMetaIn
 
     private List<UsageParameter> usageParameters;
     
-    public static class FieldInfo
+    public static class FieldInfo implements Cloneable
     {
         public final String name;
         public final int    type;
@@ -112,6 +111,10 @@ public class UserDefinedJavaClassMeta extends BaseStepMeta implements StepMetaIn
             this.type = type;
             this.length = length;
             this.precision = precision;
+        }
+        
+        public Object clone() throws CloneNotSupportedException {
+        	return super.clone();
         }
     }
 
@@ -229,9 +232,60 @@ public class UserDefinedJavaClassMeta extends BaseStepMeta implements StepMetaIn
         readData(stepnode);
     }
 
-    public Object clone()
+    public Object clone() 
     {
-        return super.clone();
+		try {
+
+			UserDefinedJavaClassMeta retval = (UserDefinedJavaClassMeta) super.clone();
+
+			if (fields != null) {
+				List<FieldInfo> newFields = new ArrayList<FieldInfo>(fields.size());
+				for (FieldInfo field : fields) {
+					newFields.add((FieldInfo) field.clone());
+				}
+				retval.fields = newFields;
+			}
+
+			if (definitions != null) {
+				List<UserDefinedJavaClassDef> newDefinitions = new ArrayList<UserDefinedJavaClassDef>();
+				for (UserDefinedJavaClassDef def : definitions) {
+					newDefinitions.add((UserDefinedJavaClassDef) def.clone());
+				}
+				retval.definitions = newDefinitions;
+			}
+
+			retval.cookedTransformClass = null;
+			retval.cookErrors = new ArrayList<Exception>(0);
+
+			if (infoStepDefinitions != null) {
+				List<StepDefinition> newInfoStepDefinitions = new ArrayList<StepDefinition>();
+				for (StepDefinition step : infoStepDefinitions) {
+					newInfoStepDefinitions.add((StepDefinition) step.clone());
+				}
+				retval.infoStepDefinitions = newInfoStepDefinitions;
+			}
+
+			if (targetStepDefinitions != null) {
+				List<StepDefinition> newTargetStepDefinitions = new ArrayList<StepDefinition>();
+				for (StepDefinition step : targetStepDefinitions) {
+					newTargetStepDefinitions.add((StepDefinition) step.clone());
+				}
+				retval.targetStepDefinitions = newTargetStepDefinitions;
+			}
+
+			if (usageParameters != null) {
+				List<UsageParameter> newUsageParameters = new ArrayList<UsageParameter>();
+				for (UsageParameter param : usageParameters) {
+					newUsageParameters.add((UsageParameter) param.clone());
+				}
+				retval.usageParameters = newUsageParameters;
+			}
+
+			return retval;
+			
+		} catch (CloneNotSupportedException e) {
+			return null;
+		}
     }
 
     private void readData(Node stepnode) throws KettleXMLException

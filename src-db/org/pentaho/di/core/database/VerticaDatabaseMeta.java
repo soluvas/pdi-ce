@@ -1,15 +1,24 @@
-/*
- * Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.
-*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.core.database;
 
@@ -82,15 +91,6 @@ public class VerticaDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
 		return false;
 	}
 	
-	/**
-	 * @param tableName The table to be truncated.
-	 * @return The SQL statement to truncate a table: remove all rows from it without a transaction
-	 */
-	public String getTruncateTableStatement(String tableName)
-	{
-	    throw new UnsupportedOperationException("Truncate not supported.");
-	}
-
 
 	/**
 	 * Generates the SQL statement to add a column to the specified table
@@ -286,13 +286,6 @@ public class VerticaDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
         return true;
     }
     
-    @Override
-    public boolean supportsViews()
-    {
-    	//TODO: This will change in Vertica 3.0
-        return false;
-    }
-    
 	/**
 	 * @return true if the database requires you to cast a parameter to varchar before comparing to null.  Only required for DB2 and Vertica
 	 * 
@@ -301,4 +294,16 @@ public class VerticaDatabaseMeta extends BaseDatabaseMeta implements DatabaseInt
 		return true;
 	}
 
+  /**
+   * @return This indicator separates the normal URL from the options
+   */
+  public String getExtraOptionIndicator()
+  {
+      return "?";
+  }
+  
+  @Override
+  public String getExtraOptionSeparator() {
+    return "&";
+  }
 }

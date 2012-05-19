@@ -1,13 +1,24 @@
-/* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.core;
 
@@ -61,12 +72,17 @@ public class Const
   /**
    * Version number
    */
-  public static final String VERSION = "4.2.1";
+  public static final String VERSION = "4.3.0";
 
   /**
    * Release Type
    */
   public enum ReleaseType {RELEASE_CANDIDATE, MILESTONE, PREVIEW, GA, STABLE}
+
+  /**
+   * The release type of this compilation
+   */
+  public static final ReleaseType RELEASE = ReleaseType.STABLE;
 
 	/**
 	 * Sleep time waiting when buffer is empty (the default)
@@ -130,7 +146,10 @@ public class Const
 
     /**
      * Path to the users home directory (keep this entry above references to getKettleDirectory())
+     * 
+     * @deprecated Use {@link Const.getUserHomeDirectory()} instead.
      */
+    @Deprecated
     public static final String USER_HOME_DIRECTORY = NVL(System.getProperty("KETTLE_HOME"), System.getProperty("user.home"));
     
     /**
@@ -709,16 +728,16 @@ public class Const
 	public static final String	XML_FILE_KETTLE_DATABASE_TYPES = "kettle-database-types.xml";
 
   /**
+	 * the value the Pan JVM should return on exit.
+	 */
+	public static final String KETTLE_TRANS_PAN_JVM_EXIT_CODE = "KETTLE_TRANS_PAN_JVM_EXIT_CODE";
+
+  /**
    * The XML file that contains the list of native import rules
    */
   public static final String  XML_FILE_KETTLE_IMPORT_RULES = "kettle-import-rules.xml";
 
     private static String[] emptyPaddedSpacesStrings;
-
-    /**
-     * The release type of this compilation
-     */
-    public static final ReleaseType RELEASE = ReleaseType.STABLE;
     
     /** 
      *  rounds double f to any number of places after decimal point
@@ -1306,6 +1325,15 @@ public class Const
 		}
 	}
 
+  /**
+   * Looks up the user's home directory (or KETTLE_HOME) for every invocation. This is no longer a static property so
+   * the value may be set after this class is loaded.
+   *
+   * @return The path to the users home directory, or the System property {@code KETTLE_HOME} if set.
+   */
+  public static final String getUserHomeDirectory() {
+    return NVL(System.getProperty("KETTLE_HOME"), System.getProperty("user.home"));
+  }
 
 	/**
 	 * Determines the Kettle directory in the user's home directory.
@@ -1313,7 +1341,7 @@ public class Const
 	 */
 	public static final String getKettleDirectory()
 	{
-		return USER_HOME_DIRECTORY + FILE_SEPARATOR + BasePropertyHandler.getProperty("userBaseDir", ".kettle");
+		return getUserHomeDirectory() + FILE_SEPARATOR + BasePropertyHandler.getProperty("userBaseDir", ".kettle");
 	}
 	
 	/** 

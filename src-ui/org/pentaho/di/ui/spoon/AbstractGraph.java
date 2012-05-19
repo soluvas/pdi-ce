@@ -1,22 +1,37 @@
-/* Copyright (c) 2010 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.ui.spoon;
 
+import java.util.List;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.gui.Point;
+import org.pentaho.ui.xul.XulComponent;
+import org.pentaho.ui.xul.XulDomContainer;
 
 /**
  * The beginnings of a common graph object, used by JobGraph and TransGraph to share common behaviors.
@@ -34,6 +49,8 @@ public abstract class AbstractGraph extends Composite {
   protected float magnification = 1.0f;
   
   protected Combo zoomLabel;
+  
+  protected XulDomContainer xulDomContainer;
   
   public AbstractGraph(Composite parent, int style) {
     super(parent, style);
@@ -165,5 +182,13 @@ public abstract class AbstractGraph extends Composite {
   
   public int showChangedWarning() throws KettleException {
     return showChangedWarning(null);
+  }
+  
+  public void dispose() {
+     super.dispose();
+     List<XulComponent> pops = xulDomContainer.getDocumentRoot().getElementsByTagName("menupopup");
+     for(XulComponent pop : pops){
+       ((Menu) pop.getManagedObject()).dispose();
+     }
   }
 }
