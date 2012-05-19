@@ -22,6 +22,10 @@
 
 package org.pentaho.di.trans.steps.jsonoutput;
 
+import java.io.BufferedOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+
 import org.apache.commons.vfs.FileObject;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ObjectNode;
@@ -41,6 +45,8 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Converts input rows to one or more XML files.
@@ -51,9 +57,11 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 public class JsonOutput extends BaseStep implements StepInterface
 {
 	private static Class<?> PKG = JsonOutput.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
+	private transient Logger logger = LoggerFactory.getLogger(JsonOutput.class);
 
     private JsonOutputMeta meta;
     private JsonOutputData data;
+    private CompatibilityFactory compatibilityFactory;    
      
     public JsonOutput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta, Trans trans)
     {
@@ -75,127 +83,166 @@ public class JsonOutput extends BaseStep implements StepInterface
     }
     
     @SuppressWarnings("unchecked")
-    private class CompatibilityMode implements CompatibilityFactory {
-       public void execute(Object[] row) throws KettleException {
-       
-          for (int i=0;i<data.nrFields;i++) {
-             JsonOutputField outputField = meta.getOutputFields()[i];
-             
-             ValueMetaInterface v = data.inputRowMeta.getValueMeta(data.fieldIndexes[i]);
-             
-             // Create a new object with specified fields
-             JSONObject jo = new JSONObject();
+	private class CompatibilityMode implements CompatibilityFactory {
+		public void execute(Object[] row) throws KettleException {
 
-             switch (v.getType()) {
-                case ValueMeta.TYPE_BOOLEAN:
-                   jo.put(outputField.getElementName(), data.inputRowMeta.getBoolean(row, data.fieldIndexes[i]));
-                   break;
-                case ValueMeta.TYPE_INTEGER:
-                   jo.put(outputField.getElementName(), data.inputRowMeta.getInteger(row, data.fieldIndexes[i]));
-                   break;
-                case ValueMeta.TYPE_NUMBER:
-                   jo.put(outputField.getElementName(), data.inputRowMeta.getNumber(row, data.fieldIndexes[i]));
-                   break;
-                case ValueMeta.TYPE_BIGNUMBER:
-                   jo.put(outputField.getElementName(), data.inputRowMeta.getBigNumber(row, data.fieldIndexes[i]));
-                   break;
-                default:
-                   jo.put(outputField.getElementName(), data.inputRowMeta.getString(row, data.fieldIndexes[i]));
-                   break;
-              }
-              data.ja.add(jo);     
-          }
+			for (int i = 0; i < data.nrFields; i++) {
+				JsonOutputField outputField = meta.getOutputFields()[i];
 
-          data.nrRow++;
-          
-          if(data.nrRowsInBloc>0) {
-             System.out.println("data.nrRow%data.nrRowsInBloc = "+ data.nrRow%data.nrRowsInBloc);
-             if(data.nrRow%data.nrRowsInBloc==0) {
-                // We can now output an object
-                System.out.println("outputting the row.");
-                outPutRow(row);
-             }
-          }
-       }
-    }
-    
-    @SuppressWarnings("unchecked")
-    private class FixedMode implements CompatibilityFactory {
-       public void execute(Object[] row) throws KettleException {
-          
-          // Create a new object with specified fields
-          JSONObject jo = new JSONObject();
-                  
-          for (int i=0;i<data.nrFields;i++) {
-              JsonOutputField outputField = meta.getOutputFields()[i];
-              
-              ValueMetaInterface v = data.inputRowMeta.getValueMeta(data.fieldIndexes[i]);
-              
-              switch (v.getType()) {
-                 case ValueMeta.TYPE_BOOLEAN:
-                    jo.put(outputField.getElementName(), data.inputRowMeta.getBoolean(row, data.fieldIndexes[i]));
-                    break;
-                 case ValueMeta.TYPE_INTEGER:
-                    jo.put(outputField.getElementName(), data.inputRowMeta.getInteger(row, data.fieldIndexes[i]));
-                    break;
-                 case ValueMeta.TYPE_NUMBER:
-                    jo.put(outputField.getElementName(), data.inputRowMeta.getNumber(row, data.fieldIndexes[i]));
-                    break;
-                 case ValueMeta.TYPE_BIGNUMBER:
-                    jo.put(outputField.getElementName(), data.inputRowMeta.getBigNumber(row, data.fieldIndexes[i]));
-                    break;
-                 default:
-                    jo.put(outputField.getElementName(), data.inputRowMeta.getString(row, data.fieldIndexes[i]));
-                    break;
-              }           
-          }
-          data.ja.add(jo);
+				ValueMetaInterface v = data.inputRowMeta
+						.getValueMeta(data.fieldIndexes[i]);
 
-        // Create a new object with specified fields
-        ObjectNode jo = data.mapper.createObjectNode();
+				// Create a new object with specified fields
+				ObjectNode jo = data.mapper.createObjectNode();
 
-        for (int i=0;i<data.nrFields;i++) {
-            JsonOutputField outputField = meta.getOutputFields()[i];
-            
-            ValueMetaInterface v = data.inputRowMeta.getValueMeta(data.fieldIndexes[i]);
-            
-            if (data.inputRowMeta.isNull(r, data.fieldIndexes[i])) {
-            	jo.put(outputField.getElementName(), (String)null);
-            } else {
-				switch (v.getType()) {
+				if (data.inputRowMeta.isNull(row, data.fieldIndexes[i])) {
+					jo.put(outputField.getElementName(), (String) null);
+				} else {
+					switch (v.getType()) {
 					case ValueMeta.TYPE_BOOLEAN:
-						jo.put(outputField.getElementName(), data.inputRowMeta.getBoolean(r, data.fieldIndexes[i]));
+						jo.put(outputField.getElementName(), data.inputRowMeta
+								.getBoolean(row, data.fieldIndexes[i]));
 						break;
 					case ValueMeta.TYPE_INTEGER:
-						jo.put(outputField.getElementName(), data.inputRowMeta.getInteger(r, data.fieldIndexes[i]));
+						jo.put(outputField.getElementName(), data.inputRowMeta
+								.getInteger(row, data.fieldIndexes[i]));
 						break;
 					case ValueMeta.TYPE_NUMBER:
-						jo.put(outputField.getElementName(), data.inputRowMeta.getNumber(r, data.fieldIndexes[i]));
+						jo.put(outputField.getElementName(), data.inputRowMeta
+								.getNumber(row, data.fieldIndexes[i]));
 						break;
 					case ValueMeta.TYPE_BIGNUMBER:
-						jo.put(outputField.getElementName(), data.inputRowMeta.getBigNumber(r, data.fieldIndexes[i]));
+						jo.put(outputField.getElementName(), data.inputRowMeta
+								.getBigNumber(row, data.fieldIndexes[i]));
 						break;
 					default:
-						jo.put(outputField.getElementName(), data.inputRowMeta.getString(r, data.fieldIndexes[i]));
+						jo.put(outputField.getElementName(), data.inputRowMeta
+								.getString(row, data.fieldIndexes[i]));
 						break;
+					}
 				}
+				data.jsonArray.add(jo);
+			}
+			data.nrRow++;
+
+			if (data.nrRowsInBloc > 0) {
+				logger.debug("data.nrRow % data.nrRowsInBloc = {}", data.nrRow
+						% data.nrRowsInBloc);
+				if (data.nrRow % data.nrRowsInBloc == 0) {
+					// We can now output an object
+					logger.debug("outputting the row: {}", row);
+					outPutRow(row);
+				}
+			}
+		}
+	}
+    
+    @SuppressWarnings("unchecked")
+	private class FixedMode implements CompatibilityFactory {
+		public void execute(Object[] row) throws KettleException {
+
+			// Create a new object with specified fields
+			ObjectNode jo = data.mapper.createObjectNode();
+
+			for (int i = 0; i < data.nrFields; i++) {
+				JsonOutputField outputField = meta.getOutputFields()[i];
+
+				ValueMetaInterface v = data.inputRowMeta
+						.getValueMeta(data.fieldIndexes[i]);
+
+				if (data.inputRowMeta.isNull(row, data.fieldIndexes[i])) {
+					jo.put(outputField.getElementName(), (String) null);
+				} else {
+					switch (v.getType()) {
+					case ValueMeta.TYPE_BOOLEAN:
+						jo.put(outputField.getElementName(), data.inputRowMeta
+								.getBoolean(row, data.fieldIndexes[i]));
+						break;
+					case ValueMeta.TYPE_INTEGER:
+						jo.put(outputField.getElementName(), data.inputRowMeta
+								.getInteger(row, data.fieldIndexes[i]));
+						break;
+					case ValueMeta.TYPE_NUMBER:
+						jo.put(outputField.getElementName(), data.inputRowMeta
+								.getNumber(row, data.fieldIndexes[i]));
+						break;
+					case ValueMeta.TYPE_BIGNUMBER:
+						jo.put(outputField.getElementName(), data.inputRowMeta
+								.getBigNumber(row, data.fieldIndexes[i]));
+						break;
+					default:
+						jo.put(outputField.getElementName(), data.inputRowMeta
+								.getString(row, data.fieldIndexes[i]));
+						break;
+					}
+				}
+
+			}
+			data.jsonArray.add(jo);
+			data.nrRow++;
+
+			if (data.nrRowsInBloc > 0) {
+				logger.debug("data.nrRow % data.nrRowsInBloc = {}", data.nrRow
+						% data.nrRowsInBloc);
+				if (data.nrRow % data.nrRowsInBloc == 0) {
+					// We can now output an object
+					logger.debug("outputting the row: {}", row);
+					outPutRow(row);
+				}
+			}
+		}
+	}
+
+    @SuppressWarnings("unchecked")
+	public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException
+    {
+        meta=(JsonOutputMeta)smi;
+        data=(JsonOutputData)sdi;
+
+        Object[] r = getRow();       // This also waits for a row to be finished.
+        if (r==null)  {
+        	 // no more input to be expected...
+        	if(!data.rowsAreSafe) {
+        		// Let's output the remaining unsafe data
+                outPutRow(r);
             }
             
+            setOutputDone();
+            return false;
         }
-        data.jsonArray.add(jo);
-        data.nrRow++;
         
-        if (data.nrRowsInBloc > 0) {
-            log.debug("data.nrRow % data.nrRowsInBloc = {}", data.nrRow % data.nrRowsInBloc);
-	        if (data.nrRow % data.nrRowsInBloc == 0) {
-	        	// We can now output an object
-                log.debug("outputting the row: {}", r);
-	        	outPutRow(r);
-	        }
+        if (first)  {
+        	first=false;
+        	data.inputRowMeta=getInputRowMeta();
+        	data.inputRowMetaSize=data.inputRowMeta.size();
+        	if(data.outputValue) {
+        		data.outputRowMeta = data.inputRowMeta.clone();
+        		meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
+        	}
+        	
+        	// Cache the field name indexes
+        	//
+        	data.nrFields=meta.getOutputFields().length;
+        	data.fieldIndexes = new int[data.nrFields];
+        	for (int i=0;i<data.nrFields;i++) {
+        		data.fieldIndexes[i] = data.inputRowMeta.indexOfValue(meta.getOutputFields()[i].getFieldName());
+        		if (data.fieldIndexes[i]<0) {
+        			throw new KettleException(BaseMessages.getString(PKG, "JsonOutput.Exception.FieldNotFound")); //$NON-NLS-1$
+        		}
+        		JsonOutputField field = meta.getOutputFields()[i];
+        		field.setElementName(environmentSubstitute(field.getElementName()));
+        	}
         }
-    }
+        
+        data.rowsAreSafe=false;
+        compatibilityFactory.execute(r);
 
-    private CompatibilityFactory compatibilityFactory;    
+        if(data.writeToFile && !data.outputValue) {
+			putRow(data.inputRowMeta,r ); // in case we want it go further...
+			incrementLinesOutput();
+		}
+        return true;
+     }    
     
     @SuppressWarnings("unchecked")
 	private void outPutRow(Object[] rowData) throws KettleStepException {
@@ -258,98 +305,6 @@ public class JsonOutput extends BaseStep implements StepInterface
         data.jsonArray = data.mapper.createArrayNode();
     }
 
-    public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
-       
-       meta=(JsonOutputMeta)smi;
-       data=(JsonOutputData)sdi;
-
-       Object[] r = getRow();       // This also waits for a row to be finished.
-       if (r==null)  {
-         // no more input to be expected...
-        if(!data.rowsAreSafe) {
-           // Let's output the remaining unsafe data
-               outPutRow(r);
-           }
-           
-           setOutputDone();
-           return false;
-       }
-       
-       if (first)  {
-        first=false;
-        data.inputRowMeta=getInputRowMeta();
-        data.inputRowMetaSize=data.inputRowMeta.size();
-        if(data.outputValue) {
-           data.outputRowMeta = data.inputRowMeta.clone();
-           meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
-        }
-
-        return false;
-    }
-    
-    public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
-        meta=(JsonOutputMeta)smi;
-        data=(JsonOutputData)sdi;
-        if(data.jsonArray!=null) data.jsonArray=null;
-        closeFile();
-        super.dispose(smi, sdi);
-        
-        // Cache the field name indexes
-        //
-        data.nrFields=meta.getOutputFields().length;
-        data.fieldIndexes = new int[data.nrFields];
-        for (int i=0;i<data.nrFields;i++) {
-           data.fieldIndexes[i] = data.inputRowMeta.indexOfValue(meta.getOutputFields()[i].getFieldName());
-           if (data.fieldIndexes[i]<0) {
-              throw new KettleException(BaseMessages.getString(PKG, "JsonOutput.Exception.FieldNotFound")); //$NON-NLS-1$
-           }
-           JsonOutputField field = meta.getOutputFields()[i];
-           field.setElementName(environmentSubstitute(field.getElementName()));
-        }
-       }
-       
-       data.rowsAreSafe=false;
-       compatibilityFactory.execute(r);
-       
-     if(data.writeToFile && !data.outputValue) {
-        putRow(data.inputRowMeta,r ); // in case we want it go further...
-        incrementLinesOutput();
-     }
-       return true;
-    }    
-        
-   @SuppressWarnings("unchecked")
-	private void outPutRow(Object[] rowData) throws KettleStepException {
-    	// We can now output an object
-		data.jg = new JSONObject();
-		data.jg.put(data.realBlocName, data.ja);
-		String value = data.jg.toJSONString();
-		
-		if(data.outputValue) {
-			Object[] outputRowData = RowDataUtil.addValueData(rowData, data.inputRowMetaSize, value);
-			incrementLinesOutput();
-			putRow(data.outputRowMeta, outputRowData);
-		}
-		
-		if(data.writeToFile) {
-			// Open a file
-			if (!openNewFile()) {
-				throw new KettleStepException(BaseMessages.getString(PKG, "JsonOutput.Error.OpenNewFile", buildFilename()));
-			}
-			// Write data to file
-			try {
-				data.writer.write(value);
-			}catch(Exception e) {
-				throw new KettleStepException(BaseMessages.getString(PKG, "JsonOutput.Error.Writing"), e);
-			}
-			// Close file
-			closeFile();
-		}
-        // Data are safe
-        data.rowsAreSafe=true;
-        data.ja = new JSONArray();
-    }
-
     public boolean init(StepMetaInterface smi, StepDataInterface sdi)
     {
         meta=(JsonOutputMeta)smi;
@@ -399,12 +354,11 @@ public class JsonOutput extends BaseStep implements StepInterface
     public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
         meta=(JsonOutputMeta)smi;
         data=(JsonOutputData)sdi;
-        if(data.ja!=null) data.ja=null;
-        if(data.jg!=null) data.jg=null;
+        if(data.jsonArray!=null) data.jsonArray=null;
         closeFile();
         super.dispose(smi, sdi);
-        
     }   
+
     private void createParentFolder(String filename) throws KettleStepException {
     	if(!meta.isCreateParentFolder()) return;
 		// Check for parent folder
