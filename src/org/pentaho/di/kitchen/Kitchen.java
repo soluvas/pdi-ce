@@ -128,8 +128,8 @@ public class Kitchen
         }
         
         if (!Const.isEmpty(optionLogfile)) {
-          fileAppender = LogWriter.createFileAppender(optionLogfile.toString(), true);
-          LogWriter.getInstance().addAppender(fileAppender);
+//          fileAppender = LogWriter.createFileAppender(optionLogfile.toString(), true);
+//          LogWriter.getInstance().addAppender(fileAppender);
         } else {
           fileAppender = null;
         }
@@ -382,7 +382,7 @@ public class Kitchen
         {
             if (repository!=null) repository.disconnect();
             if (fileAppender!=null) {
-              LogWriter.getInstance().removeAppender(fileAppender);
+//              LogWriter.getInstance().removeAppender(fileAppender);
             }
         }
         

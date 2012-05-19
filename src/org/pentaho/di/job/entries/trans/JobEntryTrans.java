@@ -557,20 +557,20 @@ public class JobEntryTrans extends JobEntryBase implements Cloneable, JobEntryIn
                 result.setResult(false);
                 return result;
         	}
-            try
-            {
-                appender = LogWriter.createFileAppender(realLogFilename, true,setAppendLogfile);
-                LogWriter.getInstance().addAppender(appender);
-            }
-            catch(KettleException e)
-            {
-                logError(BaseMessages.getString(PKG, "JobTrans.Error.UnableOpenAppender",realLogFilename,e.toString()));
-                
-                logError(Const.getStackTracker(e));
-                result.setNrErrors(1);
-                result.setResult(false);
-                return result;
-            }
+//            try
+//            {
+//                appender = LogWriter.createFileAppender(realLogFilename, true,setAppendLogfile);
+//                LogWriter.getInstance().addAppender(appender);
+//            }
+//            catch(KettleException e)
+//            {
+//                logError(BaseMessages.getString(PKG, "JobTrans.Error.UnableOpenAppender",realLogFilename,e.toString()));
+//                
+//                logError(Const.getStackTracker(e));
+//                result.setNrErrors(1);
+//                result.setResult(false);
+//                return result;
+//            }
         }
 
         // Figure out the remote slave server...
@@ -1083,7 +1083,7 @@ public class JobEntryTrans extends JobEntryBase implements Cloneable, JobEntryIn
         {
             if (appender!=null)
             {
-            	LogWriter.getInstance().removeAppender(appender);
+//            	LogWriter.getInstance().removeAppender(appender);
                 appender.close();
 
                 ResultFile resultFile = new ResultFile(ResultFile.FILE_TYPE_LOG, appender.getFile(), parentJob.getJobname(), getName());

@@ -129,8 +129,8 @@ public class Pan {
 
     Log4jFileAppender fileAppender  = null; 
     if (!Const.isEmpty(optionLogfile)) {
-      fileAppender = LogWriter.createFileAppender(optionLogfile.toString(), true);
-      LogWriter.getInstance().addAppender(fileAppender);
+//      fileAppender = LogWriter.createFileAppender(optionLogfile.toString(), true);
+//      LogWriter.getInstance().addAppender(fileAppender);
     }
 
     if (!Const.isEmpty(optionLoglevel)) {
@@ -476,7 +476,7 @@ public class Pan {
 
       // Close the file appender if any...
       //
-      LogWriter.closeAndRemoveFileAppender();
+//      LogWriter.closeAndRemoveFileAppender();
 
       exitJVM(2);
     } finally {

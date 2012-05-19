@@ -38,7 +38,7 @@ public class CentralLogStore {
 	 */
 	private CentralLogStore(int maxSize, int maxLogTimeoutMinutes) {
 		this.appender = new Log4jBufferAppender(maxSize);
-		LogWriter.getInstance().addAppender(this.appender);
+//		LogWriter.getInstance().addAppender(this.appender);
 		replaceLogCleaner(maxLogTimeoutMinutes);
 	}
 	
