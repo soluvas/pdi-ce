@@ -1,13 +1,24 @@
-/* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.job.entries.getpop;
 
@@ -299,10 +310,7 @@ public class JobEntryGetPOP extends JobEntryBase implements Cloneable, JobEntryI
 			username = rep.getJobEntryAttributeString(id_jobentry, "username");
 			password        = Encr.decryptPasswordOptionallyEncrypted(rep.getJobEntryAttributeString(id_jobentry, "password"));
 			usessl          = rep.getJobEntryAttributeBoolean(id_jobentry, "usessl");
-			int intSSLPort = (int)rep.getJobEntryAttributeInteger(id_jobentry, "sslport");
 			sslport = rep.getJobEntryAttributeString(id_jobentry, "sslport"); // backward compatible.
-			if (intSSLPort>0 && Const.isEmpty(sslport)) sslport = Integer.toString(intSSLPort);
-
 			outputdirectory        = rep.getJobEntryAttributeString(id_jobentry, "outputdirectory");
 			filenamepattern        = rep.getJobEntryAttributeString(id_jobentry, "filenamepattern");
 			if(Const.isEmpty(filenamepattern)) filenamepattern=DEFAULT_FILE_NAME_PATTERN;
@@ -743,7 +751,7 @@ public class JobEntryGetPOP extends JobEntryBase implements Cloneable, JobEntryI
 			}
 
 			
-			String targetAttachmentFolder=realOutputFolder;
+			String targetAttachmentFolder=KettleVFS.getFilename(fileObject);
 			// check for attachment folder
 			boolean useDifferentFolderForAttachment=(isSaveAttachment() && isDifferentFolderForAttachment());
 			
@@ -760,7 +768,7 @@ public class JobEntryGetPOP extends JobEntryBase implements Cloneable, JobEntryI
 				if (fileObject.getType()!=FileType.FOLDER)
 					throw new KettleException(BaseMessages.getString(PKG, "JobGetMailsFromPOP.Error.AttachmentFolderNotAFolder",realFolderAttachment));
 				
-				targetAttachmentFolder=realFolderAttachment;
+				targetAttachmentFolder=KettleVFS.getFilename(fileObject);
 			}
 		    // Close fileObject! we don't need it anymore ...
 			try  {fileObject.close();fileObject=null;}catch ( IOException ex ) {};
@@ -965,7 +973,8 @@ public class JobEntryGetPOP extends JobEntryBase implements Cloneable, JobEntryI
 			if(!usePOP3 && !Const.isEmpty(realIMAPFolder)) {
 				mailConn.openFolder(realIMAPFolder, !(getActionType()==MailConnectionMeta.ACTION_TYPE_GET && getAfterGetIMAP()==MailConnectionMeta.AFTER_GET_IMAP_NOTHING));
 			} else {
-				mailConn.openFolder(!(getActionType()==MailConnectionMeta.ACTION_TYPE_GET && getAfterGetIMAP()==MailConnectionMeta.AFTER_GET_IMAP_NOTHING));
+				// If Protocol is POP3 and "Delete after retrieval" is checked, we should open Folder in READ_WRITE Mode!
+				mailConn.openFolder(!(getActionType()==MailConnectionMeta.ACTION_TYPE_GET && getAfterGetIMAP()==MailConnectionMeta.AFTER_GET_IMAP_NOTHING) || (usePOP3 && delete));
 			}
 
 			mailConn.retrieveMessages();

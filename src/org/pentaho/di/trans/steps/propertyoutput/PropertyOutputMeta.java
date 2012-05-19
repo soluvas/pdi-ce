@@ -1,16 +1,25 @@
-/*************************************************************************************** 
- * Copyright (C) 2007 Samatar.  All rights reserved. 
- * This software was developed by Samatar and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. A copy of the license, 
- * is included with the binaries and source code. The Original Code is Samatar.  
- * The Initial Developer is Samatar.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an 
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. 
- * Please refer to the license for the specific language governing your rights 
- * and limitations.
- ***************************************************************************************/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package org.pentaho.di.trans.steps.propertyoutput;
 
 
@@ -61,7 +70,7 @@ public class PropertyOutputMeta extends BaseStepMeta implements StepMetaInterfac
     private String 		keyfield;
     private String 		valuefield;
     
-	private boolean		AddToResult;
+	private boolean		addToResult;
 	
  
     /** The base name of the output file */
@@ -225,17 +234,17 @@ public class PropertyOutputMeta extends BaseStepMeta implements StepMetaInterfac
     /**
      * @return Returns the Add to result filesname flag.
      */
-    public boolean AddToResult()
+    public boolean addToResult()
     {
-        return AddToResult;
+        return addToResult;
     }
     
     /**
-     * @param AddToResult The Add file to result to set.
+     * @param addToResult The Add file to result to set.
      */
-    public void setAddToResult(boolean AddToResult)
+    public void setAddToResult(boolean addToResult)
     {
-        this.AddToResult = AddToResult;
+        this.addToResult = addToResult;
     }
     
     /**
@@ -371,7 +380,8 @@ public class PropertyOutputMeta extends BaseStepMeta implements StepMetaInterfac
 			partNrInFilename     = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "file", "haspartno"));
 			dateInFilename  = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "file", "add_date"));
 			timeInFilename  = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "file", "add_time"));
-			AddToResult     = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "file", "AddToResult"));
+			addToResult     = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "file", "AddToResult"));
+			append = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "file", "append"));
 			fileName  = XMLHandler.getTagValue(stepnode, "file", "name");
 			fileNameInField="Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "fileNameInField"));
 			fileNameField       = XMLHandler.getTagValue(stepnode, "fileNameField");
@@ -416,7 +426,7 @@ public class PropertyOutputMeta extends BaseStepMeta implements StepMetaInterfac
 		retval.append("      "+XMLHandler.addTagValue("add_time",   timeInFilename));
 		
 		retval.append("      "+XMLHandler.addTagValue("create_parent_folder",   createparentfolder));
-		retval.append("    "+XMLHandler.addTagValue("addtoresult",      AddToResult));
+		retval.append("    "+XMLHandler.addTagValue("addtoresult",      addToResult));
 		retval.append("    "+XMLHandler.addTagValue("append",      append));
 		retval.append("      </file>"+Const.CR);
 		
@@ -444,7 +454,7 @@ public class PropertyOutputMeta extends BaseStepMeta implements StepMetaInterfac
 			timeInFilename        =      rep.getStepAttributeBoolean(id_step, "file_add_time");
 			
 			createparentfolder        =      rep.getStepAttributeBoolean(id_step, "create_parent_folder");
-			AddToResult     =      rep.getStepAttributeBoolean(id_step, "addtoresult");
+			addToResult     =      rep.getStepAttributeBoolean(id_step, "addtoresult");
 			append     =      rep.getStepAttributeBoolean(id_step, "append");
 			fileNameInField =      rep.getStepAttributeBoolean (id_step, "fileNameInField");
 			fileNameField	=	   rep.getStepAttributeString (id_step, "fileNameField");
@@ -474,7 +484,7 @@ public class PropertyOutputMeta extends BaseStepMeta implements StepMetaInterfac
 			rep.saveStepAttribute(id_transformation, id_step, "file_add_time",    timeInFilename);
 			
 			rep.saveStepAttribute(id_transformation, id_step, "create_parent_folder",    createparentfolder);
-			rep.saveStepAttribute(id_transformation, id_step, "addtoresult",        AddToResult);
+			rep.saveStepAttribute(id_transformation, id_step, "addtoresult",        addToResult);
 			rep.saveStepAttribute(id_transformation, id_step, "append",        append);
 			rep.saveStepAttribute(id_transformation, id_step, "fileNameInField",   fileNameInField);
 			rep.saveStepAttribute(id_transformation, id_step, "fileNameField",   fileNameField);

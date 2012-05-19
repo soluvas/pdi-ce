@@ -50,11 +50,31 @@ case `uname -s` in
 		;;
 
 	Darwin)
-		echo "Starting Data Integration using 'Spoon.sh' from OS X is not supported."
-		echo "Please start using 'Data Integration 32-bit' or"
-		echo "'Data Integration 64-bit' as appropriate."
-		exit
-		;;
+    ARCH=`uname -m`
+	OPT="-XstartOnFirstThread $OPT"
+	case $ARCH in
+		x86_64)
+			if $($_PENTAHO_JAVA -version 2>&1 | grep "64-Bit" > /dev/null )
+                            then
+			  LIBPATH=$BASEDIR/../libswt/osx64/
+                            else
+			  LIBPATH=$BASEDIR/../libswt/osx/
+                            fi
+			;;
+
+		i[3-6]86)
+			LIBPATH=$BASEDIR/../libswt/osx/
+			;;
+
+		*)	
+			echo "I'm sorry, this Mac platform [$ARCH] is not yet supported!"
+			echo "Please try starting using 'Data Integration 32-bit' or"
+			echo "'Data Integration 64-bit' as appropriate."
+			exit
+			;;
+	esac
+	;;
+
 
 	Linux)
 	    ARCH=`uname -m`
@@ -88,7 +108,7 @@ case `uname -s` in
 		case $ARCH in
 			x86_64)
 				LIBPATH=$BASEDIR/../libswt/freebsd/x86_64/
-				echo "I'm sorry, this Linux platform [$ARCH] is not yet supported!"
+				echo "I'm sorry, this FreeBSD platform [$ARCH] is not yet supported!"
 				exit
 				;;
 
@@ -98,12 +118,12 @@ case `uname -s` in
 
 			ppc)
 				LIBPATH=$BASEDIR/../libswt/freebsd/ppc/
-				echo "I'm sorry, this Linux platform [$ARCH] is not yet supported!"
+				echo "I'm sorry, this FreeBSD platform [$ARCH] is not yet supported!"
 				exit
 				;;
 
 			*)	
-				echo "I'm sorry, this Linux platform [$ARCH] is not yet supported!"
+				echo "I'm sorry, this FreeBSD platform [$ARCH] is not yet supported!"
 				exit
 				;;
 		esac
@@ -132,7 +152,7 @@ export LIBPATH
 # ******************************************************************
 
 if [ -z "$PENTAHO_DI_JAVA_OPTIONS" ]; then
-    PENTAHO_DI_JAVA_OPTIONS="-Xmx512m"
+    PENTAHO_DI_JAVA_OPTIONS="-Xmx512m -XX:MaxPermSize=256m"
 fi
 
 OPT="$OPT $PENTAHO_DI_JAVA_OPTIONS -Djava.library.path=$LIBPATH -DKETTLE_HOME=$KETTLE_HOME -DKETTLE_REPOSITORY=$KETTLE_REPOSITORY -DKETTLE_USER=$KETTLE_USER -DKETTLE_PASSWORD=$KETTLE_PASSWORD -DKETTLE_PLUGIN_PACKAGES=$KETTLE_PLUGIN_PACKAGES -DKETTLE_LOG_SIZE_LIMIT=$KETTLE_LOG_SIZE_LIMIT"

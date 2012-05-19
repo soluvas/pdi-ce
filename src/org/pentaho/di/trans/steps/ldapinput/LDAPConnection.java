@@ -1,16 +1,24 @@
-/*************************************************************************************** 
- * Copyright (C) 2007 Samatar.  All rights reserved. 
- * This software was developed by Samatar and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. A copy of the license, 
- * is included with the binaries and source code. The Original Code is Samatar.  
- * The Initial Developer is Samatar.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an 
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. 
- * Please refer to the license for the specific language governing your rights 
- * and limitations.
- ***************************************************************************************/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.trans.steps.ldapinput;
 
@@ -47,7 +55,7 @@ import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.trans.steps.ldapinput.store.CustomdSocketFactory;
+import org.pentaho.di.trans.steps.ldapinput.store.CustomSocketFactory;
 
 public class LDAPConnection {
   private static Class<?> PKG = LDAPInputMeta.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
@@ -211,9 +219,9 @@ public class LDAPConnection {
 
     if (getProtocol() != PROTOCOL_LDAP) { // if SSL or TLS
         if (isTrustAllCertificates()) {
-          CustomdSocketFactory.configure();
+          CustomSocketFactory.configure();
         } else {
-          CustomdSocketFactory.configure(getTrustStorePath(), getTrustStorePassword());
+          CustomSocketFactory.configure(getTrustStorePath(), getTrustStorePassword());
         }
     }
 
@@ -238,7 +246,7 @@ public class LDAPConnection {
         StartTlsRequest tlsRequest = new StartTlsRequest();
         this.tls = (StartTlsResponse) getInitialContext().extendedOperation(tlsRequest);
         /* Starting TLS */
-        this.tls.negotiate((SSLSocketFactory) CustomdSocketFactory.getDefault());
+        this.tls.negotiate((SSLSocketFactory) CustomSocketFactory.getDefault());
       }
 
       if (log.isBasic())

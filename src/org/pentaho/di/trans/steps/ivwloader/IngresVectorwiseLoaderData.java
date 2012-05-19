@@ -27,22 +27,22 @@ import org.pentaho.di.trans.steps.ivwloader.IngresVectorwiseLoader.FifoOpener;
  */
 public class IngresVectorwiseLoaderData extends BaseStepData implements StepDataInterface
 {
-	public int    keynrs[];         // nr of keylookup -value in row...
+  public int    keynrs[];         // nr of keylookup -value in row...
     
-	public StreamLogger errorLogger;
+  public StreamLogger errorLogger;
 
-	public StreamLogger outputLogger;
+  public StreamLogger outputLogger;
 
-	public byte[] separator;
-	public byte[] newline;
+  public byte[] separator;
+  public byte[] newline;
 
-	public String schemaTable;
+  public String schemaTable;
 
-	public String fifoFilename;
+  public String fifoFilename;
 
-	public OutputStream fifoStream;
-	
-	public IngresVectorwiseLoader.SqlRunner sqlRunner;
+  public OutputStream fifoStream;
+  
+  public IngresVectorwiseLoader.SqlRunner sqlRunner;
 
     public byte[] quote;
 
@@ -56,14 +56,14 @@ public class IngresVectorwiseLoaderData extends BaseStepData implements StepData
 
     public String encoding;
 
-	/**
-	 *  Default constructor.
-	 */
-	public IngresVectorwiseLoaderData()
-	{
-		super();
-	}
-	
+  /**
+   *  Default constructor.
+   */
+  public IngresVectorwiseLoaderData()
+  {
+    super();
+  }
+  
     public byte[] getBytes(String str) {
       if (isEncoding) {
         try {

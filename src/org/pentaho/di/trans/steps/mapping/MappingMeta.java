@@ -1,13 +1,24 @@
-/* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.trans.steps.mapping;
 
@@ -138,11 +149,6 @@ public class MappingMeta extends BaseStepMeta implements StepMetaInterface, HasR
       inputMappings.clear();
       outputMappings.clear();
       
-      String multiInput = XMLHandler.getTagValue(stepnode, "allow_multiple_input");
-      allowingMultipleInputs = Const.isEmpty(multiInput) ? inputMappings.size()>1 : "Y".equalsIgnoreCase(multiInput);
-      String multiOutput = XMLHandler.getTagValue(stepnode, "allow_multiple_output");
-      allowingMultipleOutputs = Const.isEmpty(multiOutput) ? outputMappings.size()>1 : "Y".equalsIgnoreCase(multiOutput);
-      
       if (mappingsNode != null) {
         // Read all the input mapping definitions...
         //
@@ -210,6 +216,12 @@ public class MappingMeta extends BaseStepMeta implements StepMetaInterface, HasR
         mappingParameters = new MappingParameters();
         
       }
+      
+      String multiInput = XMLHandler.getTagValue(stepnode, "allow_multiple_input");
+      allowingMultipleInputs = Const.isEmpty(multiInput) ? inputMappings.size()>1 : "Y".equalsIgnoreCase(multiInput);
+      String multiOutput = XMLHandler.getTagValue(stepnode, "allow_multiple_output");
+      allowingMultipleOutputs = Const.isEmpty(multiOutput) ? outputMappings.size()>1 : "Y".equalsIgnoreCase(multiOutput);
+      
     } catch (Exception e) {
       throw new KettleXMLException(BaseMessages.getString(PKG, "MappingMeta.Exception.ErrorLoadingTransformationStepFromXML"), e); //$NON-NLS-1$
     }
@@ -435,12 +447,14 @@ public class MappingMeta extends BaseStepMeta implements StepMetaInterface, HasR
         // However, we do need to re-map some fields...
         // 
         inputRowMeta = row.clone();
-        for (MappingValueRename valueRename : definition.getValueRenames()) {
-          ValueMetaInterface valueMeta = inputRowMeta.searchValueMeta(valueRename.getSourceValueName());
-          if (valueMeta == null) {
-            throw new KettleStepException(BaseMessages.getString(PKG, "MappingMeta.Exception.UnableToFindField", valueRename.getSourceValueName()));
+        if (!inputRowMeta.isEmpty()) {
+          for (MappingValueRename valueRename : definition.getValueRenames()) {
+            ValueMetaInterface valueMeta = inputRowMeta.searchValueMeta(valueRename.getSourceValueName());
+            if (valueMeta == null) {
+              throw new KettleStepException(BaseMessages.getString(PKG, "MappingMeta.Exception.UnableToFindField", valueRename.getSourceValueName()));
+            }
+            valueMeta.setName(valueRename.getTargetValueName());
           }
-          valueMeta.setName(valueRename.getTargetValueName());
         }
       } else {
         // The row metadata that goes to the info mapping input comes from the

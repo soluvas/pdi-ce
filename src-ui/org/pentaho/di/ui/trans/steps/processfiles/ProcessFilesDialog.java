@@ -1,18 +1,24 @@
- /* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Samatar.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
-
-/*
- * Created on 18-June-2008
+ * Pentaho Data Integration
  *
- */
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.ui.trans.steps.processfiles;
 
@@ -111,6 +117,13 @@ public class ProcessFilesDialog extends BaseStepDialog implements StepDialogInte
 			}
 		};
 
+      SelectionAdapter lsButtonChanged = new SelectionAdapter()
+      {
+          public void widgetSelected(SelectionEvent e)
+          {
+              input.setChanged();
+          }
+      };
         
 		changed = input.hasChanged();
 
@@ -195,6 +208,7 @@ public class ProcessFilesDialog extends BaseStepDialog implements StepDialogInte
 		wCreateParentFolder=new Button(wSettingsGroup, SWT.CHECK );
  		props.setLook(wCreateParentFolder);
 		wCreateParentFolder.setToolTipText(BaseMessages.getString(PKG, "ProcessFilesDialog.CreateParentFolder.Tooltip"));
+		wCreateParentFolder.addSelectionListener(lsButtonChanged);
 		fdCreateParentFolder=new FormData();
 		fdCreateParentFolder.left = new FormAttachment(middle, 0);
 		fdCreateParentFolder.top  = new FormAttachment(wOperation, margin);
@@ -212,6 +226,7 @@ public class ProcessFilesDialog extends BaseStepDialog implements StepDialogInte
 		wOverwriteTarget=new Button(wSettingsGroup, SWT.CHECK );
  		props.setLook(wOverwriteTarget);
 		wOverwriteTarget.setToolTipText(BaseMessages.getString(PKG, "ProcessFilesDialog.OverwriteTarget.Tooltip"));
+		wOverwriteTarget.addSelectionListener(lsButtonChanged);
 		fdOverwriteTarget=new FormData();
 		fdOverwriteTarget.left = new FormAttachment(middle, 0);
 		fdOverwriteTarget.top  = new FormAttachment(wCreateParentFolder, margin);
@@ -229,6 +244,7 @@ public class ProcessFilesDialog extends BaseStepDialog implements StepDialogInte
 		wAddResult=new Button(wSettingsGroup, SWT.CHECK );
  		props.setLook(wAddResult);
 		wAddResult.setToolTipText(BaseMessages.getString(PKG, "ProcessFilesDialog.AddResult.Tooltip"));
+		wAddResult.addSelectionListener(lsButtonChanged);
 		fdAddResult=new FormData();
 		fdAddResult.left = new FormAttachment(middle, 0);
 		fdAddResult.top  = new FormAttachment(wOverwriteTarget, margin);
@@ -246,6 +262,7 @@ public class ProcessFilesDialog extends BaseStepDialog implements StepDialogInte
 		wSimulate=new Button(wSettingsGroup, SWT.CHECK );
  		props.setLook(wSimulate);
 		wSimulate.setToolTipText(BaseMessages.getString(PKG, "ProcessFilesDialog.Simulate.Tooltip"));
+		wSimulate.addSelectionListener(lsButtonChanged);
 		fdSimulate=new FormData();
 		fdSimulate.left = new FormAttachment(middle, 0);
 		fdSimulate.top  = new FormAttachment(wAddResult, margin);

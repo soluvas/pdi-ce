@@ -1,13 +1,24 @@
-/* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.ui.spoon.trans;
 
@@ -22,6 +33,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 import org.apache.log4j.spi.LoggingEvent;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -97,7 +109,9 @@ import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.logging.LogMessage;
 import org.pentaho.di.core.logging.LogParentProvidedInterface;
 import org.pentaho.di.core.logging.LoggingObjectInterface;
+import org.pentaho.di.core.logging.LoggingObjectType;
 import org.pentaho.di.core.logging.LoggingRegistry;
+import org.pentaho.di.core.logging.SimpleLoggingObject;
 import org.pentaho.di.core.plugins.PluginInterface;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.plugins.StepPluginType;
@@ -320,9 +334,7 @@ public class TransGraph extends AbstractGraph implements XulEventHandler, Redraw
   private Map<StepMeta, DelayTimer> delayTimers;
 
   private StepMeta showTargetStreamsStep;
-  
-  private XulDomContainer xulDomContainer;
-  
+    
   Timer redrawTimer;
 
   public void setCurrentNote(NotePadMeta ni) {
@@ -3266,27 +3278,8 @@ public class TransGraph extends AbstractGraph implements XulEventHandler, Redraw
 
   public synchronized void start(TransExecutionConfiguration executionConfiguration) throws KettleException {
       // Auto save feature...
-      if (transMeta.hasChanged()) {
-        if (spoon.props.getAutoSave()) {
-          spoon.saveToFile(transMeta);
-        } else {
-          MessageDialogWithToggle md = new MessageDialogWithToggle(
-              shell,
-              BaseMessages.getString(PKG, "TransLog.Dialog.FileHasChanged.Title"), //$NON-NLS-1$
-              null,
-              BaseMessages.getString(PKG, "TransLog.Dialog.FileHasChanged1.Message") + Const.CR + BaseMessages.getString(PKG, "TransLog.Dialog.FileHasChanged2.Message") + Const.CR, //$NON-NLS-1$ //$NON-NLS-2$
-              MessageDialog.QUESTION, new String[] {
-                  BaseMessages.getString(PKG, "System.Button.Yes"), BaseMessages.getString(PKG, "System.Button.No") }, //$NON-NLS-1$ //$NON-NLS-2$
-              0, BaseMessages.getString(PKG, "TransLog.Dialog.Option.AutoSaveTransformation"), //$NON-NLS-1$
-              spoon.props.getAutoSave());
-          int answer = md.open();
-          if ((answer & 0xFF) == 0) {
-            spoon.saveToFile(transMeta);
-          }
-          spoon.props.setAutoSave(md.getToggleState());
-        }
-      }
-
+	  this.handleTransMetaChanges(transMeta);
+	  
       if (((transMeta.getName() != null && transMeta.getObjectId() != null && spoon.rep != null) || // Repository available & name / id set
           (transMeta.getFilename() != null && spoon.rep == null) // No repository & filename set
           )
@@ -3325,6 +3318,13 @@ public class TransGraph extends AbstractGraph implements XulEventHandler, Redraw
             // To be able to completely test this, we need to run it as we would normally do in pan
             //
             trans = new Trans(transMeta, spoon.rep, transMeta.getName(), transMeta.getRepositoryDirectory().getPath(), transMeta.getFilename());
+            
+			String spoonLogObjectId = UUID.randomUUID().toString();
+			SimpleLoggingObject spoonLoggingObject = new SimpleLoggingObject("SPOON", LoggingObjectType.SPOON, null);
+			spoonLoggingObject.setContainerObjectId(spoonLogObjectId);
+			spoonLoggingObject.setLogLevel(executionConfiguration.getLogLevel());
+			trans.setParent(spoonLoggingObject);
+			
             trans.setLogLevel(executionConfiguration.getLogLevel());
             trans.setReplayDate(executionConfiguration.getReplayDate());
             trans.setRepository(executionConfiguration.getRepository());
@@ -4282,7 +4282,28 @@ public class TransGraph extends AbstractGraph implements XulEventHandler, Redraw
     location.x = location.x + nodeMass*velocity.dx*velocity.dx;
     location.y = location.y + nodeMass*velocity.dy*velocity.dy;
   }
-
-
-
+  
+  public void handleTransMetaChanges(TransMeta transMeta) throws KettleException {
+     if (transMeta.hasChanged()) {
+        if (spoon.props.getAutoSave()) {
+           spoon.saveToFile(transMeta);
+        } 
+        else {
+           MessageDialogWithToggle md = new MessageDialogWithToggle(
+             shell,
+             BaseMessages.getString(PKG, "TransLog.Dialog.FileHasChanged.Title"), //$NON-NLS-1$
+             null,
+             BaseMessages.getString(PKG, "TransLog.Dialog.FileHasChanged1.Message") + Const.CR + BaseMessages.getString(PKG, "TransLog.Dialog.FileHasChanged2.Message") + Const.CR, //$NON-NLS-1$ //$NON-NLS-2$
+             MessageDialog.QUESTION, new String[] {
+                 BaseMessages.getString(PKG, "System.Button.Yes"), BaseMessages.getString(PKG, "System.Button.No") }, //$NON-NLS-1$ //$NON-NLS-2$
+             0, BaseMessages.getString(PKG, "TransLog.Dialog.Option.AutoSaveTransformation"), //$NON-NLS-1$
+             spoon.props.getAutoSave());
+           int answer = md.open();
+           if ((answer & 0xFF) == 0) {
+             spoon.saveToFile(transMeta);
+           }
+           spoon.props.setAutoSave(md.getToggleState());
+        }
+     }
+  }
 }

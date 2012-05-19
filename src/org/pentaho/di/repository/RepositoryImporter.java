@@ -1,5 +1,28 @@
+/*******************************************************************************
+ *
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package org.pentaho.di.repository;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -56,6 +79,8 @@ public class RepositoryImporter implements IRepositoryImporter {
   private List<String> limitDirs;
   
   private List<RepositoryObject> referencingObjects;
+  
+  private List<Exception> exceptions;
 
   public RepositoryImporter(Repository repository) {
     this(repository, new ImportRules(), new ArrayList<String>());
@@ -66,6 +91,7 @@ public class RepositoryImporter implements IRepositoryImporter {
       this.rep = repository;
       this.importRules = importRules;
       this.limitDirs = limitDirs;
+      this.exceptions = new ArrayList<Exception>();
   }
   
   public synchronized void importAll(RepositoryImportFeedbackInterface feedback, String fileDirectory, String[] filenames, RepositoryDirectoryInterface baseDirectory, boolean overwrite, boolean continueOnError, String versionComment) {
@@ -98,7 +124,19 @@ public class RepositoryImporter implements IRepositoryImporter {
         try {
           RepositoryExportSaxParser parser = new RepositoryExportSaxParser(filename, feedback);          
           parser.parse(this);
-        } catch(Exception e) {
+        } 
+        catch (FileNotFoundException fnfe) {
+           addException(fnfe);
+           feedback.showError(BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorGeneral.Title"), 
+                 BaseMessages.getString(PKG, "PurRepositoryImporter.FileNotFound.Message", filename), fnfe);
+           
+         }
+         catch (SAXParseException spe) {
+           addException(spe);
+           feedback.showError(BaseMessages.getString(PKG, "PurRepositoryImporter.ErrorGeneral.Title"), 
+                  BaseMessages.getString(PKG, "PurRepositoryImporter.ParseError.Message", filename), spe);
+         }
+        catch(Exception e) { 
           feedback.showError(BaseMessages.getString(PKG, "RepositoryImporter.ErrorGeneral.Title"), 
               BaseMessages.getString(PKG, "RepositoryImporter.ErrorGeneral.Message"), e);
         }        
@@ -726,5 +764,17 @@ public class RepositoryImporter implements IRepositoryImporter {
   @Override
   public boolean isAskingOverwriteConfirmation() {
     return askOverwrite;
+  }
+
+  private void addException(Exception exception) {
+     if (this.exceptions == null) {
+        this.exceptions = new ArrayList<Exception>();
+     }
+     exceptions.add(exception);
+  }
+  
+  @Override
+  public List<Exception> getExceptions() {
+     return exceptions;
   }
 }

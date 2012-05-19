@@ -1,15 +1,25 @@
- /* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Samatar HASSAN.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
- 
 package org.pentaho.di.job.entries.checkdbconnection;
 
 import static org.pentaho.di.job.entry.validator.AndValidator.putValidators;
@@ -185,16 +195,16 @@ public class JobEntryCheckDbConnections extends JobEntryBase implements Cloneabl
 		try
 		{
 			 // How many connections?
-	        int argnr = rep.countNrJobEntryAttributes(id_jobentry, "connection"); //$NON-NLS-1$
+	        int argnr = rep.countNrJobEntryAttributes(id_jobentry, "id_database"); //$NON-NLS-1$
 	        connections = new DatabaseMeta[argnr];
 	        waitfors = new String[argnr];
 	        waittimes = new int[argnr];
 	        // Read them all...
 	        for (int a = 0; a < argnr; a++) 
 	        {
-				   connections[a] = rep.loadDatabaseMetaFromJobEntryAttribute(id_jobentry, "connection", "id_database", databases);	
-				   waitfors[a] = rep.getJobEntryAttributeString(id_jobentry,"waitfor");
-				   waittimes[a] = getWaitByCode(Const.NVL(rep.getJobEntryAttributeString(id_jobentry,"waittime"), ""));
+				   connections[a] = rep.loadDatabaseMetaFromJobEntryAttribute(id_jobentry, "connection", a, "id_database", databases);	
+				   waitfors[a] = rep.getJobEntryAttributeString(id_jobentry, a, "waitfor");
+				   waittimes[a] = getWaitByCode(Const.NVL(rep.getJobEntryAttributeString(id_jobentry, a, "waittime"), ""));
 	        }
 		}
 		catch(KettleException dbe)
@@ -210,10 +220,10 @@ public class JobEntryCheckDbConnections extends JobEntryBase implements Cloneabl
 			   // save the arguments...
 		      if (connections != null) {
 		        for (int i = 0; i < connections.length; i++) {
-					rep.saveDatabaseMetaJobEntryAttribute(id_job, getObjectId(), "connection", "id_database", connections[i]);
+					rep.saveDatabaseMetaJobEntryAttribute(id_job, getObjectId(), i, "connection", "id_database", connections[i]);
 					
-					rep.saveJobEntryAttribute(id_job, getObjectId(),"waittime", getWaitTimeCode(waittimes[i]));
-					rep.saveJobEntryAttribute(id_job, getObjectId(),"waitfor", waitfors[i]);
+					rep.saveJobEntryAttribute(id_job, getObjectId(), i, "waittime", getWaitTimeCode(waittimes[i]));
+					rep.saveJobEntryAttribute(id_job, getObjectId(), i, "waitfor", waitfors[i]);
 		        }
 		      }
 		}

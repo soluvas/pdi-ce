@@ -1,13 +1,24 @@
- /* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.repository.kdr;
 
@@ -401,6 +412,7 @@ public class KettleDatabaseRepository extends KettleDatabaseRepositoryBase imple
 	public void deleteDatabaseMeta(String databaseName) throws KettleException {
     	securityProvider.validateAction(RepositoryOperation.DELETE_DATABASE);
 		databaseDelegate.deleteDatabaseMeta(databaseName);
+		commit();
 	}
 
 	// ClusterSchema
@@ -466,12 +478,14 @@ public class KettleDatabaseRepository extends KettleDatabaseRepositoryBase imple
 	public void deleteRepositoryDirectory(RepositoryDirectoryInterface dir) throws KettleException {
     	securityProvider.validateAction(RepositoryOperation.DELETE_DIRECTORY);
 		directoryDelegate.delRepositoryDirectory(dir, true);
+		commit();
 	}
 
 	public ObjectId renameRepositoryDirectory(ObjectId id, RepositoryDirectoryInterface newParentDir, String newName) throws KettleException {
 	  ObjectId result = null;
 	  securityProvider.validateAction(RepositoryOperation.RENAME_DIRECTORY);
 	  result = directoryDelegate.renameRepositoryDirectory(id, newParentDir, newName);
+	  commit();
 	   
 	  return result;
 	}
@@ -1127,6 +1141,7 @@ public class KettleDatabaseRepository extends KettleDatabaseRepositoryBase imple
         {
           connectionDelegate.performDelete("DELETE FROM "+quoteTable(KettleDatabaseRepository.TABLE_R_SLAVE)+" WHERE "+quote(KettleDatabaseRepository.FIELD_SLAVE_ID_SLAVE)+" = ? ", id_slave);
           connectionDelegate.performDelete("DELETE FROM "+quoteTable(KettleDatabaseRepository.TABLE_R_TRANS_SLAVE)+" WHERE "+quote(KettleDatabaseRepository.FIELD_TRANS_SLAVE_ID_SLAVE)+" = ? ", id_slave);
+          commit();
         }
         else
         {
@@ -1157,10 +1172,12 @@ public class KettleDatabaseRepository extends KettleDatabaseRepositoryBase imple
    
     public synchronized void deletePartitionSchema(ObjectId id_partition_schema) throws KettleException {
     	partitionSchemaDelegate.delPartitionSchema(id_partition_schema);
+    	commit();
     }
     
     public synchronized void deleteClusterSchema(ObjectId id_cluster) throws KettleException {
        clusterSchemaDelegate.delClusterSchema(id_cluster);
+       commit();
     }
 
 	public synchronized void deleteTransformation(ObjectId id_transformation) throws KettleException
@@ -1177,6 +1194,7 @@ public class KettleDatabaseRepository extends KettleDatabaseRepositoryBase imple
         delTransformationClusters(id_transformation);
         delTransformationSlaves(id_transformation);
 		delTrans(id_transformation);
+		commit();
 	}
 	
 	public synchronized void deleteJob(ObjectId id_job) throws KettleException
@@ -1191,6 +1209,7 @@ public class KettleDatabaseRepository extends KettleDatabaseRepositoryBase imple
 		delJobEntryCopies(id_job);
 		delJobHops(id_job);
 		delJob(id_job);
+		commit();
 
 		// logBasic("All deleted on job with ID_JOB: "+id_job);
 	}
@@ -1609,6 +1628,19 @@ public class KettleDatabaseRepository extends KettleDatabaseRepositoryBase imple
 		}
 	}
 
+	public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId id_jobentry, String nameCode, int nr, String idCode, List<DatabaseMeta> databases) throws KettleException {
+		
+		long id_database = getJobEntryAttributeInteger(id_jobentry, nr, idCode);
+		if (id_database<=0) {
+			String name = getJobEntryAttributeString(id_jobentry, nr, nameCode);
+			if (name==null) {
+				return null;
+			}
+			return DatabaseMeta.findDatabase(databases, name);
+		}
+		return DatabaseMeta.findDatabase(databases, new LongObjectId(id_database));
+	}
+	
 	public DatabaseMeta loadDatabaseMetaFromJobEntryAttribute(ObjectId id_jobentry, String nameCode, String idCode, List<DatabaseMeta> databases) throws KettleException {
 		
 		long id_database = getJobEntryAttributeInteger(id_jobentry, idCode);
@@ -1645,6 +1677,31 @@ public class KettleDatabaseRepository extends KettleDatabaseRepositoryBase imple
 			
 			insertJobEntryDatabase(id_job, id_jobentry, id);
 		}
+	}
+
+	/**
+    * This method saves the object ID of the database object (if not null) in the step attributes
+    * @param id_job
+    * @param nr
+    * @param id_jobentry
+    * @param nameCode
+    * @param nameCode
+    * @param idCode
+    * @param database
+    */
+	public void saveDatabaseMetaJobEntryAttribute(ObjectId id_job, ObjectId id_jobentry, int nr, String nameCode, String idCode, DatabaseMeta database) throws KettleException {
+	   ObjectId id = null;
+	   if (database!=null) {
+	      id = database.getObjectId();
+	      Long id_database = id==null ? Long.valueOf(-1L) : new LongObjectId(id).longValue();
+	         
+	      // Save both the ID and the name of the database connection...
+	      //
+	      saveJobEntryAttribute(id_job, id_jobentry, nr, idCode, id_database);
+	      saveJobEntryAttribute(id_job, id_jobentry, nr, nameCode, id_database);
+	         
+	      insertJobEntryDatabase(id_job, id_jobentry, id);
+	   }
 	}
 
 	/**

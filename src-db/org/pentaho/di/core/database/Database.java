@@ -1,30 +1,24 @@
-/*
- * Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.
-*/
- /**********************************************************************
- **                                                                   **
- **                                                                   **
- ** Kettle, from version 2.2 on, is released into the public domain   **
- ** under the Lesser GNU Public License (LGPL).                       **
- **                                                                   **
- ** For more details, please read the document LICENSE.txt, included  **
- ** in this project                                                   **
- **                                                                   **
- ** http://www.kettle.be                                              **
- ** info@kettle.be                                                    **
- **                                                                   **
- **********************************************************************/
-
- 
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.core.database;
 
@@ -615,6 +609,10 @@ public class Database implements VariableSpace, LoggingObjectInterface
      */
 	public void cancelQuery() throws KettleDatabaseException
 	{
+	  // Canceling statements only if we're not streaming results on MySQL
+	  //
+	  if (databaseMeta.isMySQLVariant() && databaseMeta.isStreamingResults()) return;
+
         cancelStatement(pstmt);
         cancelStatement(sel_stmt);
 	}
@@ -1449,6 +1447,19 @@ public class Database implements VariableSpace, LoggingObjectInterface
 		prepStatementInsert = null;
 	}
 	
+	/**
+	 * Close the passed prepared statement.
+	 * This object's "written" property is passed to the
+	 * method that does the execute and commit.
+	 * 
+	 * @param ps
+	 * @param batch
+	 * @throws KettleDatabaseException
+	 */
+	public void emptyAndCommit(PreparedStatement ps, boolean batch) throws KettleDatabaseException {
+	   emptyAndCommit(ps, batch, written);
+	}
+	
 		/**
 		 * Close the prepared statement of the insert statement.
 		 * 
@@ -2171,6 +2182,11 @@ public class Database implements VariableSpace, LoggingObjectInterface
 	{
 		String cr_index="";
 		DatabaseInterface databaseInterface = databaseMeta.getDatabaseInterface();
+
+		// Exasol does not support explicit handling of indexes
+		if (databaseInterface instanceof Exasol4DatabaseMeta){
+			return "";
+		}
 		
 		cr_index += "CREATE ";
 	
@@ -2332,9 +2348,11 @@ public class Database implements VariableSpace, LoggingObjectInterface
 
 		try
 		{
-			if (inform==null 
+			if ( (inform==null 
 					// Hack for MSSQL jtds 1.2 when using xxx NOT IN yyy we have to use a prepared statement (see BugID 3214)
-					&& databaseMeta.getDatabaseInterface() instanceof MSSQLServerDatabaseMeta )
+					&& databaseMeta.getDatabaseInterface() instanceof MSSQLServerDatabaseMeta) ||
+				  databaseMeta.getDatabaseInterface().supportsResultSetMetadataRetrievalOnly()
+			   )
 			{
 				sel_stmt = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 				
@@ -2618,7 +2636,7 @@ public class Database implements VariableSpace, LoggingObjectInterface
                 length = rm.getPrecision(index);
             }
             else
-            if ( (databaseMeta.getDatabaseInterface() instanceof OracleDatabaseMeta || databaseMeta.isMySQLVariant()) &&
+            if ( (databaseMeta.getDatabaseInterface() instanceof OracleDatabaseMeta) &&
                 ( type==java.sql.Types.VARBINARY || type==java.sql.Types.LONGVARBINARY )
                )
             {
@@ -2626,6 +2644,16 @@ public class Database implements VariableSpace, LoggingObjectInterface
                 valtype = ValueMetaInterface.TYPE_STRING;
                 length = rm.getColumnDisplaySize(index);
             }
+            else
+            if ( databaseMeta.isMySQLVariant() &&
+                    ( type==java.sql.Types.VARBINARY || type==java.sql.Types.LONGVARBINARY )
+                    )
+                 {
+                     // set the data type to String, see PDI-4812
+                     valtype = ValueMetaInterface.TYPE_STRING;
+                     // PDI-6677 - don't call 'length = rm.getColumnDisplaySize(index);'
+                     length=-1; // keep the length to -1, e.g. for string functions (e.g. CONCAT see PDI-4812)
+                 }
             else
             {
                 length=-1; 
@@ -3820,6 +3848,9 @@ public class Database implements VariableSpace, LoggingObjectInterface
                         stop=true;
                     }
                     if (monitor!=null && limit>0) monitor.worked(1);
+                    if (monitor!=null && monitor.isCanceled()) {
+                      break;
+                    }
                 }
                 closeQuery(rset);
                 if (monitor!=null) monitor.done();

@@ -1,15 +1,25 @@
-/*
- * Copyright (c) 2010 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.
- */
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package org.pentaho.di.core.logging;
 
 import java.util.ArrayList;
@@ -65,6 +75,9 @@ public class LoggingRegistry {
 	 * @return a new ID (UUID)
 	 */
 	public String registerLoggingSource(Object object) {
+
+		// recalc max size: see PDI-7270
+		maxSize = Const.toInt(EnvUtil.getSystemProperty(Const.KETTLE_MAX_LOGGING_REGISTRY_SIZE), 1000);
 		
 		// Extract the core logging information from the object itself, including the hierarchy.
 		//
@@ -232,6 +245,31 @@ public class LoggingRegistry {
 		return lastModificationTime;
 	}
 
+	public String dump(boolean includeGeneral){
+		StringBuffer out  = new StringBuffer(50000);
+		for (LoggingObjectInterface o : map.values()){
+			if (!includeGeneral && o.getObjectType().equals(LoggingObjectType.GENERAL)){
+				continue;
+			}
+			out.append(o.getContainerObjectId());
+			out.append("\t");
+			out.append(o.getLogChannelId());
+			out.append("\t");
+			out.append(o.getObjectType().name());
+			out.append("\t");
+			out.append(o.getObjectName());
+			out.append("\t");
+			out.append((o.getParent()!=null)?o.getParent().getLogChannelId():"-");
+			out.append("\t");
+			out.append((o.getParent()!=null)?o.getParent().getObjectType().name():"-");
+			out.append("\t");
+			out.append((o.getParent()!=null)?o.getParent().getObjectName():"-");
+			out.append("\n");
+			
+		}
+		return out.toString();
+	}
+	
 	/**
 	 * Removes the logging registry entry and all its children from the registry.
 	 * 

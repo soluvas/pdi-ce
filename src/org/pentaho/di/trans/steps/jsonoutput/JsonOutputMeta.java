@@ -1,13 +1,24 @@
- /* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.trans.steps.jsonoutput;
 
@@ -106,8 +117,11 @@ public class JsonOutputMeta extends BaseStepMeta  implements StepMetaInterface
 
 	/** Flag to indicate the we want to append to the end of an existing file (if it exists) */
     private  boolean fileAppended;
+    
+   /** Flag to indicate whether or not to create JSON structures compatible with pre PDI-4.3.0  */
+   private boolean compatibilityMode;
 
-	/** Flag: add the stepnr in the filename */
+   /** Flag: add the stepnr in the filename */
     private  boolean stepNrInFilename;
 	
 	/** Flag: add the partition number in the filename */
@@ -329,6 +343,7 @@ public class JsonOutputMeta extends BaseStepMeta  implements StepMetaInterface
             jsonBloc    = XMLHandler.getTagValue(stepnode, "jsonBloc"); //$NON-NLS-1$
             nrRowsInBloc= XMLHandler.getTagValue(stepnode, "nrRowsInBloc"); //$NON-NLS-1$
             operationType = getOperationTypeByCode(Const.NVL(XMLHandler.getTagValue(stepnode,	"operation_type"), ""));
+            compatibilityMode = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "compatibility_mode"));
             
 			encoding         = XMLHandler.getTagValue(stepnode, "encoding");
 			AddToResult = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "AddToResult"));
@@ -342,6 +357,7 @@ public class JsonOutputMeta extends BaseStepMeta  implements StepMetaInterface
 			timeInFilename  = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "file", "add_time"));
 			DoNotOpenNewFileInit    = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "file", "DoNotOpenNewFileInit"));
       servletOutput         = "Y".equalsIgnoreCase(XMLHandler.getTagValue(stepnode, "file", "servlet_output"));
+
 			
 			Node fields = XMLHandler.getSubNode(stepnode, "fields"); //$NON-NLS-1$
             int nrfields= XMLHandler.countNodes(fields, "field"); //$NON-NLS-1$
@@ -400,6 +416,7 @@ public class JsonOutputMeta extends BaseStepMeta  implements StepMetaInterface
         retval.append("    ").append(XMLHandler.addTagValue("jsonBloc",  jsonBloc)); //$NON-NLS-1$ //$NON-NLS-2$
         retval.append("    ").append(XMLHandler.addTagValue("nrRowsInBloc",  nrRowsInBloc)); //$NON-NLS-1$ //$NON-NLS-2$
         retval.append("    ").append(XMLHandler.addTagValue("operation_type",getOperationTypeCode(operationType)));
+        retval.append("    ").append(XMLHandler.addTagValue("compatibility_mode", compatibilityMode));
 		retval.append("    ").append(XMLHandler.addTagValue("encoding",  encoding));
 		retval.append("    ").append(XMLHandler.addTagValue("addtoresult",      AddToResult));
 		retval.append("    <file>"+Const.CR);
@@ -440,6 +457,7 @@ public class JsonOutputMeta extends BaseStepMeta  implements StepMetaInterface
             nrRowsInBloc   =      rep.getStepAttributeString (id_step, "nrRowsInBloc"); //$NON-NLS-1$
             
             operationType = getOperationTypeByCode(Const.NVL(rep.getStepAttributeString(id_step, "operation_type"), ""));
+            compatibilityMode = rep.getStepAttributeBoolean(id_step, "compatibility_mode");
 			encoding        =      rep.getStepAttributeString (id_step, "encoding");
 			AddToResult     =      rep.getStepAttributeBoolean(id_step, "addtoresult"); 
 			
@@ -486,7 +504,8 @@ public class JsonOutputMeta extends BaseStepMeta  implements StepMetaInterface
             rep.saveStepAttribute(id_transformation, id_step, "jsonBloc", jsonBloc); //$NON-NLS-1$
             rep.saveStepAttribute(id_transformation, id_step, "nrRowsInBloc", nrRowsInBloc); //$NON-NLS-1$
             
-            rep.saveStepAttribute(id_transformation, id_step, "operation_type", getOperationTypeCode(operationType));		
+            rep.saveStepAttribute(id_transformation, id_step, "operation_type", getOperationTypeCode(operationType));
+            rep.saveStepAttribute(id_transformation, id_step, "compatibility_mode",  compatibilityMode);
 			rep.saveStepAttribute(id_transformation, id_step, "encoding",         encoding);
 			rep.saveStepAttribute(id_transformation, id_step, "addtoresult",        AddToResult);
 			
@@ -721,5 +740,13 @@ public class JsonOutputMeta extends BaseStepMeta  implements StepMetaInterface
     
     public void setServletOutput(boolean servletOutput) {
       this.servletOutput = servletOutput;
+    }
+    
+    public boolean isCompatibilityMode() {
+       return compatibilityMode;
+    }
+
+    public void setCompatibilityMode(boolean compatibilityMode) {
+       this.compatibilityMode = compatibilityMode;
     }
 }

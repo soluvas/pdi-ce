@@ -1,15 +1,25 @@
-/*
- * Copyright (c) 2010 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.
- */
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package org.pentaho.di.ui.trans.steps.splitfieldtorows;
 
 
@@ -78,6 +88,8 @@ public class SplitFieldToRowsDialog extends BaseStepDialog implements StepDialog
 	private FormData fdAdditionalFields;
 
     private SplitFieldToRowsMeta  input;
+
+	private Button wDelimiterIsRegex;
 
 	public SplitFieldToRowsDialog(Shell parent, Object in, TransMeta transMeta, String sname)
 	{
@@ -186,6 +198,30 @@ public class SplitFieldToRowsDialog extends BaseStepDialog implements StepDialog
 		fdDelimiter.right= new FormAttachment(100, 0);
 		wDelimiter.setLayoutData(fdDelimiter);
 
+		// Add File to the result files name
+		Label wlDelimiterIsRegex = new Label(shell, SWT.RIGHT);
+		wlDelimiterIsRegex.setText(BaseMessages.getString(PKG, "SplitFieldToRowsDialog.DelimiterIsRegex.Label"));
+		props.setLook(wlDelimiterIsRegex);
+		FormData fdlDelimiterIsRegex = new FormData();
+		fdlDelimiterIsRegex.left = new FormAttachment(0, 0);
+		fdlDelimiterIsRegex.top = new FormAttachment(wDelimiter);
+		fdlDelimiterIsRegex.right = new FormAttachment(middle, -margin);
+		wlDelimiterIsRegex.setLayoutData(fdlDelimiterIsRegex);
+		wDelimiterIsRegex = new Button(shell, SWT.CHECK);
+		wDelimiterIsRegex.setToolTipText(BaseMessages.getString(PKG, "SplitFieldToRowsDialog.DelimiterIsRegex.Tooltip"));
+		props.setLook(wDelimiterIsRegex);
+		FormData fdDelimiterIsRegex = new FormData();
+		fdDelimiterIsRegex.left = new FormAttachment(middle, 0);
+		fdDelimiterIsRegex.top = new FormAttachment(wDelimiter);
+		fdDelimiterIsRegex.right = new FormAttachment(100, 0);
+		wDelimiterIsRegex.setLayoutData(fdDelimiterIsRegex);
+		SelectionAdapter lsSelR = new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent arg0) {
+				input.setChanged();
+			}
+		};
+		wDelimiterIsRegex.addSelectionListener(lsSelR);
+
 		// ValName line
 		wlValName=new Label(shell, SWT.RIGHT);
 		wlValName.setText(BaseMessages.getString(PKG, "SplitFieldToRowsDialog.NewFieldName.Label")); //$NON-NLS-1$
@@ -193,7 +229,7 @@ public class SplitFieldToRowsDialog extends BaseStepDialog implements StepDialog
 		fdlValName=new FormData();
 		fdlValName.left = new FormAttachment(0, 0);
 		fdlValName.right= new FormAttachment(middle, -margin);
-		fdlValName.top  = new FormAttachment(wDelimiter, margin);
+		fdlValName.top  = new FormAttachment(wDelimiterIsRegex, margin);
 		wlValName.setLayoutData(fdlValName);
 		wValName=new TextVar(transMeta,shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
 		wValName.setText(""); //$NON-NLS-1$
@@ -202,7 +238,7 @@ public class SplitFieldToRowsDialog extends BaseStepDialog implements StepDialog
 		fdValName=new FormData();
 		fdValName.left = new FormAttachment(middle, 0);
 		fdValName.right= new FormAttachment(100, 0);
-		fdValName.top  = new FormAttachment(wDelimiter, margin);
+		fdValName.top  = new FormAttachment(wDelimiterIsRegex, margin);
 		wValName.setLayoutData(fdValName);
 
 		///////////////////////////////// 
@@ -338,6 +374,7 @@ public class SplitFieldToRowsDialog extends BaseStepDialog implements StepDialog
 		wDelimiter.setText(Const.NVL(input.getDelimiter(), ""));
 		wValName.setText(Const.NVL(input.getNewFieldname(), ""));
 		wInclRownum.setSelection(input.includeRowNumber());
+		wDelimiterIsRegex.setSelection(input.isDelimiterRegex());
 		if (input.getRowNumberField()!=null) wInclRownumField.setText(input.getRowNumberField());
 		wResetRownum.setSelection(input.resetRowNumber());
 	}
@@ -360,6 +397,7 @@ public class SplitFieldToRowsDialog extends BaseStepDialog implements StepDialog
 		input.setIncludeRowNumber( wInclRownum.getSelection() );
 		input.setRowNumberField( wInclRownumField.getText() );
 		input.setResetRowNumber( wResetRownum.getSelection() );
+		input.setDelimiterRegex(wDelimiterIsRegex.getSelection());
 		dispose();
 	}
 }

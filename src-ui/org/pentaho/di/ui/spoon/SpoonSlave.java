@@ -1,13 +1,24 @@
-/* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
- * Data Integration.  The Initial Developer is Pentaho Corporation.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
- * the license for the specific language governing your rights and limitations.*/
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package org.pentaho.di.ui.spoon;
 
@@ -562,7 +573,7 @@ public class SpoonSlave extends Composite implements TabItemInterface {
     if (treeEntry.isJob()) {
       // We clicked on a job line item
       //
-      SlaveServerJobStatus jobStatus = slaveServerStatus.findJobStatus(treeEntry.name);
+      SlaveServerJobStatus jobStatus = slaveServerStatus.findJobStatus(treeEntry.name, treeEntry.id);
       StringBuffer message = new StringBuffer();
       String errorDescription = jobStatus.getErrorDescription();
       if (!Const.isEmpty(errorDescription)) {
@@ -606,11 +617,11 @@ public class SpoonSlave extends Composite implements TabItemInterface {
     }
 
     if (treeEntry.isJob()) {
-      SlaveServerJobStatus jobStatus = slaveServerStatus.findJobStatus(treeEntry.name);
+      SlaveServerJobStatus jobStatus = slaveServerStatus.findJobStatus(treeEntry.name, treeEntry.id);
       if (jobStatus != null) {
         if (!jobStatus.isRunning()) {
           try {
-            WebResult webResult = slaveServer.startJob(treeEntry.name, treeEntry.id);
+            WebResult webResult = slaveServer.startJob(treeEntry.name, jobStatus.getId());
             if (!webResult.getResult().equalsIgnoreCase(WebResult.STRING_OK)) {
               EnterTextDialog dialog = new EnterTextDialog(shell, BaseMessages.getString(PKG, "SpoonSlave.ErrorStartingJob.Title"), BaseMessages.getString(PKG,
                   "SpoonSlave.ErrorStartingJob.Message"), webResult.getMessage());
@@ -668,11 +679,11 @@ public class SpoonSlave extends Composite implements TabItemInterface {
     // Jobs
     //
     if (treeEntry.isJob()) {
-      SlaveServerJobStatus jobStatus = slaveServerStatus.findJobStatus(treeEntry.name);
+      SlaveServerJobStatus jobStatus = slaveServerStatus.findJobStatus(treeEntry.name, treeEntry.id);
       if (jobStatus != null) {
         if (jobStatus.isRunning()) {
           try {
-            WebResult webResult = slaveServer.stopJob(treeEntry.name, treeEntry.id);
+            WebResult webResult = slaveServer.stopJob(treeEntry.name, jobStatus.getId());
             if (!webResult.getResult().equalsIgnoreCase(WebResult.STRING_OK)) {
               EnterTextDialog dialog = new EnterTextDialog(shell, BaseMessages.getString(PKG, "SpoonSlave.ErrorStoppingJob.Title"), BaseMessages.getString(PKG,
                   "SpoonSlave.ErrorStoppingJob.Message"), webResult.getMessage());

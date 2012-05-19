@@ -1,17 +1,25 @@
-/*************************************************************************************** 
- * Copyright (C) 2009 Samatar.  All rights reserved. 
- * This software was developed by Samatar and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. A copy of the license, 
- * is included with the binaries and source code. The Original Code is Samatar.  
- * The Initial Developer is Samatar.
+/*******************************************************************************
  *
- * Software distributed under the GNU Lesser Public License is distributed on an 
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. 
- * Please refer to the license for the specific language governing your rights 
- * and limitations.
- ***************************************************************************************/
- 
+ * Pentaho Data Integration
+ *
+ * Copyright (C) 2002-2012 by Pentaho : http://www.pentaho.com
+ *
+ *******************************************************************************
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package org.pentaho.di.trans.steps.mailinput;
 
 import java.text.SimpleDateFormat;
@@ -32,8 +40,6 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
-
-
 
 /**
  * Read data from POP3/IMAP server and input data to the next steps.
@@ -257,10 +263,16 @@ public class MailInput extends BaseStep implements StepInterface
 						r[index]=data.mailConn.getMessageBody();
 						break;
 					case MailInputField.COLUMN_RECEIVED_DATE:
-						r[index]= new Date(data.mailConn.getMessage().getReceivedDate().getTime());
+					   Date receivedDate = data.mailConn.getMessage().getReceivedDate();
+					   if (receivedDate != null) {
+   						r[index]= new Date(receivedDate.getTime());
+					   }
+					   else {
+					      r[index] = null;
+					   }
 						break;
 					case MailInputField.COLUMN_SENT_DATE:
-						r[index]= new Date(data.mailConn.getMessage().getReceivedDate().getTime());
+						r[index]= new Date(data.mailConn.getMessage().getSentDate().getTime());
 						break;
 					case MailInputField.COLUMN_CONTENT_TYPE:
 						r[index]=data.mailConn.getMessage().getContentType();
@@ -429,7 +441,7 @@ public class MailInput extends BaseStep implements StepInterface
 				}
 			}
 			data.usePOP=meta.getProtocol().equals(MailConnectionMeta.PROTOCOL_STRING_POP3);
-			
+
 			String realserver=environmentSubstitute(meta.getServerName());
 			String realusername=environmentSubstitute(meta.getUserName());
 			String realpassword=environmentSubstitute(meta.getPassword());  
