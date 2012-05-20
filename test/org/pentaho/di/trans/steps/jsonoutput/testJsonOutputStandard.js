@@ -1,43 +1,43 @@
 {
   "data" : [ {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }, {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }, {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }, {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }, {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }, {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }, {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }, {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }, {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }, {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   } ]
 }

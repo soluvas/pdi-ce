@@ -1,61 +1,61 @@
 {
   "data" : {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }
 }{
   "data" : {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }
 }{
   "data" : {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }
 }{
   "data" : {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }
 }{
   "data" : {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }
 }{
   "data" : {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }
 }{
   "data" : {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }
 }{
   "data" : {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }
 }{
   "data" : {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }
 }{
   "data" : {
     "id" : 1,
-    "city" : "Florida",
-    "state" : "Orlando"
+    "state" : "Florida",
+    "city" : "Orlando"
   }
 }
